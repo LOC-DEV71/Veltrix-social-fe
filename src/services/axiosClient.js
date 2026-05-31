@@ -9,7 +9,12 @@ const axiosClient = axios.create({
 // Request Interceptor: Attach Bearer token from localStorage as fallback
 axiosClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token') || localStorage.getItem('admin_token');
+    // Crucial: Distinguish between admin and user tokens to avoid sending user tokens to admin APIs
+    const isAdminApi = config.url && config.url.includes('/api/admin');
+    const token = isAdminApi 
+      ? localStorage.getItem('admin_token') 
+      : localStorage.getItem('token');
+      
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
