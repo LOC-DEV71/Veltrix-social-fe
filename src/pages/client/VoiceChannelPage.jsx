@@ -10,6 +10,21 @@ const ICE_SERVERS = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
+    {
+      urls: "turn:openrelay.metered.ca:80",
+      username: "openrelayproject",
+      credential: "openrelayproject"
+    },
+    {
+      urls: "turn:openrelay.metered.ca:443",
+      username: "openrelayproject",
+      credential: "openrelayproject"
+    },
+    {
+      urls: "turn:openrelay.metered.ca:443?transport=tcp",
+      username: "openrelayproject",
+      credential: "openrelayproject"
+    }
   ]
 };
 
@@ -459,6 +474,8 @@ export default function VoiceChannelPage() {
         });
         screenSocketRef.current = screenSocket;
 
+        const screenIceCandidateQueues = {}; // peerId -> array of candidates
+
         // Bare minimum WebRTC signaling for the sender (our screen to everyone else)
         screenSocket.on('voice_users', (users) => {
           users.forEach(u => {
@@ -482,13 +499,24 @@ export default function VoiceChannelPage() {
 
         screenSocket.on('voice_answer', async ({ from, answer }) => {
           const pc = screenPeersRef.current[from];
-          if (pc) await pc.setRemoteDescription(new RTCSessionDescription(answer));
+          if (pc) {
+            await pc.setRemoteDescription(new RTCSessionDescription(answer));
+            if (screenIceCandidateQueues[from]) {
+              for (const candidate of screenIceCandidateQueues[from]) {
+                try { await pc.addIceCandidate(new RTCIceCandidate(candidate)); } catch(e){}
+              }
+              delete screenIceCandidateQueues[from];
+            }
+          }
         });
 
         screenSocket.on('voice_ice_candidate', async ({ from, candidate }) => {
           const pc = screenPeersRef.current[from];
-          if (pc) {
+          if (pc && pc.remoteDescription) {
              try { await pc.addIceCandidate(new RTCIceCandidate(candidate)); } catch(e){}
+          } else {
+             if (!screenIceCandidateQueues[from]) screenIceCandidateQueues[from] = [];
+             screenIceCandidateQueues[from].push(candidate);
           }
         });
 
@@ -766,6 +794,20 @@ export default function VoiceChannelPage() {
                           alt={u.username}
                           className="w-full h-full object-cover rounded-full shadow-2xl"
                         />
+                        {/* Ensure audio is played when pinned user has no video */}
+                        {!isMe && userStream && (
+                          <audio
+                            autoPlay
+                            playsInline
+                            muted={isDeafened}
+                            ref={audio => {
+                              if (audio && audio.srcObject !== userStream) {
+                                audio.srcObject = userStream;
+                                audio.play().catch(e => console.error("Audio play error:", e));
+                              }
+                            }}
+                          />
+                        )}
                       </div>
                     )}
 
@@ -897,6 +939,31 @@ export default function VoiceChannelPage() {
                           </div>
                         </>
                       )}
+                    </div>
+                    
+                    {/* Hidden Audio Elements for all other users to ensure we can still hear them */}
+                    <div className="hidden">
+                      {others.map(otherUser => {
+                        const otherIsMe = otherUser._id === user?._id;
+                        if (otherIsMe) return null; // don't play our own audio
+                        const otherStream = remoteStreams[otherUser._id];
+                        if (!otherStream) return null;
+                        
+                        return (
+                          <audio
+                            key={`hidden-audio-${otherUser._id}`}
+                            autoPlay
+                            playsInline
+                            muted={isDeafened}
+                            ref={audio => {
+                              if (audio && audio.srcObject !== otherStream) {
+                                audio.srcObject = otherStream;
+                                audio.play().catch(e => console.error(e));
+                              }
+                            }}
+                          />
+                        );
+                      })}
                     </div>
                   </div>
                 );
