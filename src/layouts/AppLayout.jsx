@@ -185,8 +185,8 @@ export default function AppLayout() {
   useEffect(() => {
     if (!user?._id) return;
 
-    const socket = io(import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000', {
-      withCredentials: true
+    const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:5000', {
+      auth: { token: localStorage.getItem('token') }
     });
 
     const handleConnect = () => {

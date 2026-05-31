@@ -55,7 +55,7 @@ export default function InviteModal({ isOpen, onClose, community }) {
     }
   };
 
-  const inviteLink = `http://localhost:5173/invite/${community?._id}`;
+  const inviteLink = `${window.location.origin}/invite/${community?._id}`;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(inviteLink);

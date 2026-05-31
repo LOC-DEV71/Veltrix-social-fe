@@ -97,7 +97,7 @@ export default function VoiceChannelPage() {
   useEffect(() => {
     if (!user || !channelId) return;
 
-    const socket = io(import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000', {
+    const socket = io(import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000', {
       auth: { token: localStorage.getItem('token') }
     });
     socketRef.current = socket;
@@ -452,7 +452,7 @@ export default function VoiceChannelPage() {
           isPremium: false
         };
 
-        const screenSocket = io(import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000', {
+        const screenSocket = io(import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000', {
           auth: { token: localStorage.getItem('token') }
         });
         screenSocketRef.current = screenSocket;

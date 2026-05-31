@@ -122,7 +122,7 @@ export default function ChatPage() {
 
     // Create socket if not exists
     if (!socketRef.current) {
-      socketRef.current = io(import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000', {
+      socketRef.current = io(import.meta.env.VITE_API_URL || 'http://localhost:5000', {
         autoConnect: false,
         withCredentials: true
       });

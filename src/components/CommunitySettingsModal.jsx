@@ -209,7 +209,7 @@ export default function CommunitySettingsModal({ isOpen, onClose, community, onU
       fetchFullData();
 
       // Fetch online users to calculate online members
-      const socket = io(import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000', {
+      const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:5000', {
         withCredentials: true
       });
 

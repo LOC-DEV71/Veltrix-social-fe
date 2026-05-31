@@ -19,7 +19,7 @@ export default function FriendsPage() {
     fetchFriendsData();
 
     // Init Socket for Realtime notifications
-    const newSocket = io(import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000', {
+    const newSocket = io(import.meta.env.VITE_API_URL || 'http://localhost:5000', {
       withCredentials: true
     });
 
