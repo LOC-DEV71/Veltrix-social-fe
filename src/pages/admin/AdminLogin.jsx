@@ -29,6 +29,9 @@ export default function AdminLogin() {
       const result = await adminAuthService.login(email, password);
 
       if (result.success) {
+        if (result.token) {
+          localStorage.setItem('admin_token', result.token);
+        }
         // Sync administrative details into Redux Toolkit store
         dispatch(loginSuccess(result.data));
         navigate('/admin');
