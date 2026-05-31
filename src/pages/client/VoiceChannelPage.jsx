@@ -220,7 +220,7 @@ export default function VoiceChannelPage() {
           users.forEach(u => {
             if (u._id !== user._id) {
               addDebug(`Creating offer for ${u.username}`);
-              createPeerConnection(u._id, true, stream, socket);
+              createPeerConnection(u._id, true, localStreamRef.current, socket);
             }
           });
         });
@@ -273,19 +273,34 @@ export default function VoiceChannelPage() {
 
         socket.on('voice_offer', async ({ from, offer }) => {
           addDebug(`Received offer from ${from}`);
-          const pc = createPeerConnection(from, false, stream, socket);
-          await pc.setRemoteDescription(new RTCSessionDescription(offer));
-          const answer = await pc.createAnswer();
-          await pc.setLocalDescription(answer);
-          socket.emit('voice_answer', { to: from, answer });
-          addDebug(`Sent answer to ${from}`);
           
-          // Process any queued ICE candidates
-          if (iceCandidateQueues[from]) {
-            for (const candidate of iceCandidateQueues[from]) {
-              try { await pc.addIceCandidate(new RTCIceCandidate(candidate)); } catch(e){}
+          let pc = peersRef.current[from]?.pc;
+          if (!pc) {
+            // ALWAYS use localStreamRef.current so we have the latest tracks
+            pc = createPeerConnection(from, false, localStreamRef.current, socket);
+          }
+          
+          try {
+            if (pc.signalingState !== 'stable') {
+              // Glare resolution: if we receive an offer while not stable, 
+              // we might need to rollback or ignore. For simplicity, just set remote.
+              console.warn("Signaling state is not stable, glare detected");
             }
-            delete iceCandidateQueues[from];
+            await pc.setRemoteDescription(new RTCSessionDescription(offer));
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+            socket.emit('voice_answer', { to: from, answer });
+            addDebug(`Sent answer to ${from}`);
+            
+            // Process any queued ICE candidates
+            if (iceCandidateQueues[from]) {
+              for (const candidate of iceCandidateQueues[from]) {
+                try { await pc.addIceCandidate(new RTCIceCandidate(candidate)); } catch(e){}
+              }
+              delete iceCandidateQueues[from];
+            }
+          } catch (error) {
+            console.error("Error handling voice offer:", error);
           }
         });
 
@@ -353,10 +368,14 @@ export default function VoiceChannelPage() {
 
     // Handle incoming remote audio/video
     pc.ontrack = (event) => {
-      setRemoteStreams(prev => ({
-        ...prev,
-        [peerId]: event.streams[0]
-      }));
+      setRemoteStreams(prev => {
+        const stream = event.streams[0];
+        // Wrap in a new MediaStream to force React to update the srcObject
+        return {
+          ...prev,
+          [peerId]: new MediaStream(stream.getTracks())
+        };
+      });
     };
 
     pc.onicecandidate = (event) => {
@@ -368,20 +387,22 @@ export default function VoiceChannelPage() {
       }
     };
 
-    pc.onconnectionstatechange = () => {
-      addDebug(`PC ${peerId} state: ${pc.connectionState}`);
-      if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') {
-        console.log(`Connection to ${peerId} ${pc.connectionState}`);
-      }
+    let isNegotiating = false;
+    pc.onsignalingstatechange = () => {
+      isNegotiating = (pc.signalingState !== 'stable');
     };
 
     pc.onnegotiationneeded = async () => {
+      if (isNegotiating) return;
       try {
+        isNegotiating = true;
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
         socket.emit('voice_offer', { to: peerId, offer });
       } catch (err) {
         console.error("Negotiation error:", err);
+      } finally {
+        isNegotiating = false;
       }
     };
 
@@ -426,7 +447,11 @@ export default function VoiceChannelPage() {
           addDebug('Requesting dynamic video...');
           const videoStream = await navigator.mediaDevices.getUserMedia({ video: true });
           const newVideoTrack = videoStream.getVideoTracks()[0];
-          localStreamRef.current.addTrack(newVideoTrack);
+          
+          // Recreate local stream to force local UI to update its srcObject
+          const currentTracks = localStreamRef.current.getTracks();
+          const newStream = new MediaStream([...currentTracks, newVideoTrack]);
+          localStreamRef.current = newStream;
           
           // Add to all peer connections
           Object.values(peersRef.current).forEach(({ pc }) => {
