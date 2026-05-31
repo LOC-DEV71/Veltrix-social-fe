@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { ShieldAlert, AlertTriangle, Home } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTitle } from '../../hooks/useTitle';
 
 export default function BannedPage() {
+  useTitle('Tài khoản bị cấm');
   const navigate = useNavigate();
   const [banReason, setBanReason] = useState('Vi phạm chính sách cộng đồng');
   const [banType, setBanType] = useState('both');

@@ -12,6 +12,7 @@ import EmojiPicker from 'emoji-picker-react';
 import MemberProfilePopout from '../../components/MemberProfilePopout';
 import FullProfileModal from '../../components/FullProfileModal';
 import ForwardMessageModal from '../../components/ForwardMessageModal';
+import { useTitle } from '../../hooks/useTitle';
 // Helper to get frame border color based on frame name
 const getFrameColorClass = (frameName) => {
   if (!frameName) return 'bg-transparent';
@@ -23,6 +24,7 @@ const getFrameColorClass = (frameName) => {
 };
 
 export default function ChatPage() {
+  useTitle('Kênh chat');
   const { channelId, communityId } = useParams();
   const location = useLocation();
   const outletContext = useOutletContext();

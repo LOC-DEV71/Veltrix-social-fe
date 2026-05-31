@@ -4,8 +4,10 @@ import { useSelector } from 'react-redux';
 import friendService from '../../services/client/friendService';
 import { io } from 'socket.io-client';
 import axiosClient from '../../services/axiosClient';
+import { useTitle } from '../../hooks/useTitle';
 
 export default function FriendsPage() {
+  useTitle('Bạn bè');
   const user = useSelector((state) => state.auth.user);
   const [activeTab, setActiveTab] = useState('online');
   const [friendsData, setFriendsData] = useState({ friends: [], friendRequests: [], blockedUsers: [] });

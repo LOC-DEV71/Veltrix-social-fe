@@ -3,11 +3,14 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { Shield, Sparkles, Loader2, ArrowRight } from 'lucide-react';
 import authService from '../../services/client/authService';
+import logoVeltrix from '../../assets/logo-veltrix.png';
 import { loginSuccess } from '../../redux/slices/authSlice';
+import { useTitle } from '../../hooks/useTitle';
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  useTitle('Đăng nhập');
 
   // Form State
   const [email, setEmail] = useState('');
@@ -65,8 +68,8 @@ export default function LoginPage() {
         
         {/* Header Header Info */}
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-indigo-500/10 text-indigo-400 mb-2 border border-indigo-500/20">
-            <Shield className="w-6 h-6 animate-pulse" />
+          <div className="flex items-center justify-center mb-4">
+            <img src={logoVeltrix} alt="Veltrix Logo" className="w-16 h-auto drop-shadow-[0_0_15px_rgba(99,102,241,0.5)] animate-pulse" />
           </div>
           <h2 className="text-2xl font-black text-white tracking-tight">Chào mừng quay trở lại!</h2>
           <p className="text-xs text-[#949ba4] font-medium">Chúng tôi rất vui mừng được gặp lại bạn!</p>

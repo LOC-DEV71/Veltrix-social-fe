@@ -44,6 +44,7 @@ import CommunitySettingsModal from '../components/CommunitySettingsModal';
 import ChannelSettingsModal from '../components/ChannelSettingsModal';
 import CustomStatusModal from '../components/CustomStatusModal';
 import { checkPermission } from '../utils/permissionUtils';
+import logoVeltrix from '../assets/logo-veltrix.png';
 
 export default function AppLayout() {
   const navigate = useNavigate();
@@ -348,10 +349,10 @@ export default function AppLayout() {
         <div 
           onClick={handleBackToDM}
           className={`group relative flex items-center justify-center w-12 h-12 rounded-[24px] hover:rounded-[16px] transition-all duration-300 cursor-pointer mb-2 ${
-            !selectedCommunity ? 'bg-indigo-500 text-white rounded-[16px]' : 'bg-[#313338] text-indigo-400 hover:bg-indigo-500 hover:text-white'
+            !selectedCommunity ? 'bg-[#2b2d31] rounded-[16px] shadow-inner' : 'bg-[#313338] hover:bg-[#2b2d31]'
           }`}
         >
-          <MessageSquare className="w-6 h-6" />
+          <img src={logoVeltrix} alt="Home" className="w-8 h-auto drop-shadow-md" />
           <span className={`absolute left-0 w-1 bg-white rounded-r-lg group-hover:h-5 transition-all duration-200 ${!selectedCommunity ? 'h-10 scale-100' : 'h-2 scale-0'}`} />
           <span className="absolute left-20 px-3 py-1.5 text-sm font-semibold text-white bg-[#111214] rounded-md shadow-lg opacity-0 pointer-events-none group-hover:opacity-100 group-hover:translate-x-1 translate-x-0 transition-all duration-200 z-55 whitespace-nowrap">
             Tin nhắn trực tiếp

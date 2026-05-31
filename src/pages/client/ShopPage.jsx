@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useUserStore } from '../../store/useUserStore';
 import { Sparkles, Coins, ShoppingBag, Check, ShieldAlert, Award, Plus, Loader2 } from 'lucide-react';
+import { useTitle } from '../../hooks/useTitle';
 
 const fallbackMockFrames = [
   {
@@ -217,6 +218,7 @@ function FrameCard({ frame }) {
 }
 
 export default function ShopPage() {
+  useTitle('Cửa hàng');
   const { user, products, categories, loading, fetchProducts, fetchCategories, fetchProfile, addCoins } = useUserStore();
   const [filter, setFilter] = useState('all');
   const [activeCategory, setActiveCategory] = useState('all');

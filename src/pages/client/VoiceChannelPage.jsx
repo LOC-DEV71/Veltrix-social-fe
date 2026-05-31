@@ -4,6 +4,7 @@ import { useSelector } from 'react-redux';
 import { io } from 'socket.io-client';
 import { useNavigate } from 'react-router-dom';
 import { Mic, MicOff, Headphones, HeadphoneOff, PhoneOff, Volume2, Sparkles, Signal, SignalHigh, Users, Video, VideoOff, Pin, MonitorUp, MonitorX } from 'lucide-react';
+import { useTitle } from '../../hooks/useTitle';
 
 const ICE_SERVERS = {
   iceServers: [
@@ -13,6 +14,7 @@ const ICE_SERVERS = {
 };
 
 export default function VoiceChannelPage() {
+  useTitle('Kênh thoại');
   const { channelId, communityId } = useParams();
   const { selectedCommunity, communityChannels } = useOutletContext();
   const user = useSelector(state => state.auth?.user);

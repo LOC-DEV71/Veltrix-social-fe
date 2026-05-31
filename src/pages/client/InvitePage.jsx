@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axiosClient from '../../services/axiosClient';
 import { useUserStore } from '../../store/useUserStore';
+import { useTitle } from '../../hooks/useTitle';
 
 export default function InvitePage() {
+  useTitle('Lời mời');
   const { inviteCode } = useParams(); // Using community ID as invite code for now
   const navigate = useNavigate();
   const { user } = useUserStore();
