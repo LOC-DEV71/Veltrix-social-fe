@@ -2,8 +2,8 @@ import axiosClient from '../axiosClient';
 
 const productService = {
   // GET /api/admin/products/list
-  getAll: async () => {
-    const res = await axiosClient.get('/api/admin/products/list');
+  getAll: async (params = {}) => {
+    const res = await axiosClient.get('/api/admin/products/list', { params });
     return res.data;
   },
 
@@ -22,6 +22,12 @@ const productService = {
   // DELETE /api/admin/products/:id
   delete: async (id) => {
     const res = await axiosClient.delete(`/api/admin/products/${id}`);
+    return res.data;
+  },
+
+  // PUT /api/admin/products/bulk
+  bulkAction: async (ids, action) => {
+    const res = await axiosClient.put('/api/admin/products/bulk', { ids, action });
     return res.data;
   }
 };
