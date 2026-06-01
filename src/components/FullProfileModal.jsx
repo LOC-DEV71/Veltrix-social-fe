@@ -1,10 +1,34 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { X, UserPlus, MessageCircle, MoreHorizontal } from 'lucide-react';
 import { useSelector } from 'react-redux';
+import axiosClient from '../services/axiosClient';
+import LoopingAPNG from './LoopingAPNG';
 
-export default function FullProfileModal({ isOpen, onClose, member }) {
+export default function FullProfileModal({ isOpen, onClose, member, myCommunities = [], onSelectCommunity }) {
   const currentUser = useSelector(state => state.auth.user);
+  const isSelf = member && String(currentUser?._id || currentUser?.id) === String(member?._id || member?.id);
   const [activeTab, setActiveTab] = useState('info');
+  const [mutualFriends, setMutualFriends] = useState([]);
+  const [loadingMutualFriends, setLoadingMutualFriends] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && !isSelf && member) {
+      const targetId = member._id || member.id;
+      if (targetId) {
+        setLoadingMutualFriends(true);
+        axiosClient.get(`/api/friends/mutual/${targetId}`)
+          .then(res => {
+            if (res.data?.success) {
+              setMutualFriends(res.data.mutualFriends || []);
+            }
+          })
+          .catch(err => console.error('Lỗi lấy bạn chung:', err))
+          .finally(() => setLoadingMutualFriends(false));
+      }
+    } else {
+      setMutualFriends([]);
+    }
+  }, [isOpen, isSelf, member]);
 
   useEffect(() => {
     if (isOpen) {
@@ -36,27 +60,35 @@ export default function FullProfileModal({ isOpen, onClose, member }) {
   const hasTheme = !!(member.themeColors?.primary || member.user?.themeColors?.primary);
   
   const themePrimary = formatColor(member.themeColors?.primary || member.user?.themeColors?.primary) || bannerColor;
-  const themeAccent = formatColor(member.themeColors?.accent || member.user?.themeColors?.accent) || '#111214';
+  const themeAccent = hasTheme ? formatColor(member.themeColors.accent || member.user?.themeColors?.accent) : bannerColor;
 
-  const bgImagePlaceholder = member.bannerImage || member.user?.bannerImage; // Strictly bannerImage
+  // Reverting back to original white text
+  const isLightTheme = false;
+  const textPrimary = 'text-white';
+  const textSecondary = 'text-[#dbdee1]';
+  const textMuted = 'text-[#b5bac1]';
+  const borderTab = 'border-[#dbdee1]';
+  const borderTransparentHover = 'hover:border-white/30';
+  const borderBottomClass = 'border-white/10';
+
+  const bgImagePlaceholder = bannerImage || member.user?.bannerImage; // Strictly bannerImage
+  const profileEffectUrl = member.activeProfileEffectAnimatedUrl || member.user?.activeProfileEffectAnimatedUrl;
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/70 animate-in fade-in duration-200" onClick={onClose}>
       <div 
-        className="w-full max-w-[860px] h-[640px] rounded-2xl shadow-2xl relative animate-in zoom-in-95 duration-200 border border-[#1f2023]"
+        className="w-full max-w-[1000px] h-[720px] rounded-2xl shadow-2xl relative animate-in zoom-in-95 duration-200"
         style={{ 
-          padding: hasTheme ? '6px' : '0px',
-          background: hasTheme 
-            ? `linear-gradient(to bottom, ${themePrimary} 0%, ${themeAccent} 100%)` 
-            : `linear-gradient(135deg, ${bannerColor} 0%, color-mix(in srgb, ${bannerColor} 20%, #111214) 100%)`
+          padding: '6px',
+          background: `linear-gradient(135deg, ${themePrimary} 0%, ${bannerColor} 50%, ${themeAccent} 100%)`
         }}
         onClick={e => e.stopPropagation()}
       >
         <div 
           className="w-full h-full relative flex overflow-hidden rounded-[14px]"
-          style={hasTheme ? {
-            background: `linear-gradient(to bottom, color-mix(in srgb, ${themePrimary} 25%, #111214) 0%, color-mix(in srgb, ${themeAccent} 25%, #111214) 100%)`
-          } : {}}
+          style={{
+            background: `linear-gradient(135deg, color-mix(in srgb, ${themePrimary} 35%, #111214) 0%, color-mix(in srgb, ${bannerColor} 35%, #111214) 50%, color-mix(in srgb, ${themeAccent} 35%, #111214) 100%)`
+          }}
         >
         {/* Blurred Background Image Overlay */}
         {bgImagePlaceholder && (
@@ -74,6 +106,7 @@ export default function FullProfileModal({ isOpen, onClose, member }) {
             }}
           />
         )}
+        
         <button onClick={onClose} className="absolute top-4 right-4 z-50 p-1 bg-[#1f2023]/80 hover:bg-[#35373c] text-[#b5bac1] hover:text-white rounded-full transition-colors">
           <X className="w-5 h-5" />
         </button>
@@ -82,7 +115,14 @@ export default function FullProfileModal({ isOpen, onClose, member }) {
         <div className="flex w-full h-full p-4 gap-6 relative z-10">
           
           {/* Left Column (Profile Card) */}
-          <div className="w-[340px] shrink-0 flex flex-col relative rounded-2xl bg-black/20 overflow-hidden border border-white/5 shadow-md">
+          <div className="w-[390px] shrink-0 flex flex-col relative rounded-2xl bg-black/20 overflow-hidden border border-white/5 shadow-md">
+            {/* Profile Effect Overlay */}
+            {profileEffectUrl && (
+               <div className="absolute inset-0 z-[100] pointer-events-none">
+                  <LoopingAPNG src={profileEffectUrl} alt="Profile Effect" className="w-full h-full object-fill opacity-90" duration={3000} />
+               </div>
+            )}
+            
             <div 
               className={`h-[150px] w-full shrink-0 ${bannerImage ? 'bg-cover bg-center' : ''}`} 
               style={bannerImage ? { backgroundImage: `url(${bannerImage})` } : {}} 
@@ -168,25 +208,30 @@ export default function FullProfileModal({ isOpen, onClose, member }) {
           
           {/* Right Column (Tabs) */}
           <div className="flex-1 flex flex-col pt-4 pr-2">
-            <div className="flex gap-6 border-b border-white/10 mb-2">
+            <div className={`flex gap-6 border-b ${borderBottomClass} mb-2`}>
             <button 
-              className={`pb-3 text-[14px] font-medium border-b-2 transition-colors ${activeTab === 'info' ? 'text-white border-[#dbdee1]' : 'text-[#b5bac1] border-transparent hover:text-[#dbdee1] hover:border-white/30'}`}
+              className={`pb-3 text-[14px] font-medium border-b-2 transition-colors ${activeTab === 'info' ? `${textPrimary} ${borderTab}` : `${textMuted} border-transparent hover:${textSecondary} ${borderTransparentHover}`}`}
               onClick={() => setActiveTab('info')}
             >
               Bảng
             </button>
-            <button 
-              className={`pb-3 text-[14px] font-medium border-b-2 transition-colors ${activeTab === 'mutual_servers' ? 'text-white border-[#dbdee1]' : 'text-[#b5bac1] border-transparent hover:text-[#dbdee1] hover:border-white/30'}`}
-              onClick={() => setActiveTab('mutual_servers')}
-            >
-              Máy chủ chung
-            </button>
-            <button 
-              className={`pb-3 text-[14px] font-medium border-b-2 transition-colors ${activeTab === 'mutual_friends' ? 'text-white border-[#dbdee1]' : 'text-[#b5bac1] border-transparent hover:text-[#dbdee1] hover:border-white/30'}`}
-              onClick={() => setActiveTab('mutual_friends')}
-            >
-              Bạn chung
-            </button>
+            {/* Only show mutual tabs if not self */}
+            {!isSelf && (
+              <>
+                <button 
+                  className={`pb-3 text-[14px] font-medium border-b-2 transition-colors ${activeTab === 'mutual_servers' ? `${textPrimary} ${borderTab}` : `${textMuted} border-transparent hover:${textSecondary} ${borderTransparentHover}`}`}
+                  onClick={() => setActiveTab('mutual_servers')}
+                >
+                  Máy chủ chung
+                </button>
+                <button 
+                  className={`pb-3 text-[14px] font-medium border-b-2 transition-colors ${activeTab === 'mutual_friends' ? `${textPrimary} ${borderTab}` : `${textMuted} border-transparent hover:${textSecondary} ${borderTransparentHover}`}`}
+                  onClick={() => setActiveTab('mutual_friends')}
+                >
+                  Bạn chung
+                </button>
+              </>
+            )}
           </div>
 
             <div className="flex-1 overflow-y-auto no-scrollbar text-[#dbdee1] pr-2 pb-2">
@@ -199,28 +244,134 @@ export default function FullProfileModal({ isOpen, onClose, member }) {
                     <p>Tình trạng: <span className={`font-semibold ${member.isOnline ? 'text-[#23a55a]' : 'text-[#80848e]'}`}>{member.isOnline ? 'Trực tuyến' : 'Ngoại tuyến'}</span></p>
                   </div>
                 </div>
-                
-                {/* Dummy section to match discord screenshot */}
+
                 <div className="bg-[#2b2d31] rounded-lg p-4 border border-[#1f2023]/50">
-                  <h3 className="text-[12px] font-bold text-[#f2f3f5] uppercase mb-4">Hoạt động gần đây</h3>
-                  <div className="text-[13px] text-[#949ba4] italic text-center py-4">
-                    Không có hoạt động nào trong 30 ngày qua.
-                  </div>
+                  <h3 className="text-[12px] font-bold text-[#f2f3f5] uppercase mb-4">Vai trò</h3>
+                  {member.roles && member.roles.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5">
+                      {member.roles.map((r, idx) => (
+                        <div key={idx} className="flex items-center gap-1.5 bg-black/20 hover:bg-black/40 rounded px-2 py-1 cursor-pointer transition-colors border border-black/10">
+                          <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: r.color }} />
+                          <span className="text-[12px] font-medium text-[#dbdee1]">{r.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-[13px] text-[#949ba4]">Không có vai trò nào</p>
+                  )}
+                </div>
+
+                <div className="bg-[#2b2d31] rounded-lg p-4 border border-[#1f2023]/50">
+                  <h3 className="text-[12px] font-bold text-[#f2f3f5] uppercase mb-4">Ghi chú</h3>
+                  <input
+                    type="text"
+                    placeholder="Nhấp để thêm ghi chú"
+                    className="w-full bg-transparent outline-none text-[13px] text-[#dbdee1] placeholder:text-[#949ba4]"
+                    defaultValue=""
+                  />
                 </div>
               </div>
             )}
             
             {activeTab === 'mutual_servers' && (
-              <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 flex flex-col items-center justify-center h-full text-center">
-                <img src="https://discord.com/assets/57fc7fb75d8624003d09.svg" alt="No servers" className="w-48 mb-4 opacity-50 grayscale" />
-                <p className="text-[#949ba4]">Không có máy chủ chung nào.</p>
+              <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                {(() => {
+                  const targetId = String(member._id || member.id);
+                  const mutuals = myCommunities.filter(c => c.members?.some(m => String(m.user?._id || m.user) === targetId));
+                  if (mutuals.length === 0) {
+                    return (
+                      <div className="flex flex-col items-center justify-center h-full text-center mt-10">
+                        <img src="https://discord.com/assets/4011cbdb863c0cdbdff4.svg" alt="No mutuals" className="w-48 mb-4 opacity-50 grayscale" />
+                        <p className={textMuted}>Không có máy chủ chung nào.</p>
+                      </div>
+                    );
+                  }
+                  return (
+                    <div className="space-y-2">
+                      {mutuals.map(c => (
+                        <div 
+                          key={c._id} 
+                          className="flex items-center gap-3 p-2 rounded hover:bg-[#35373c]/50 transition-colors cursor-pointer"
+                          onClick={() => {
+                            if (onSelectCommunity) {
+                              onSelectCommunity(c);
+                            }
+                          }}
+                        >
+                          <div className="w-10 h-10 rounded-full bg-[#2b2d31] flex items-center justify-center overflow-hidden shrink-0">
+                            {c.icon ? (
+                              <img src={c.icon.startsWith('http') || c.icon.startsWith('data:') ? c.icon : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${c.icon.startsWith('/') ? '' : '/'}${c.icon}`} alt={c.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <span className="text-sm font-bold text-[#dbdee1]">{c.name?.charAt(0)}</span>
+                            )}
+                          </div>
+                          <span className={`font-semibold ${textPrimary}`}>{c.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
               </div>
             )}
             
             {activeTab === 'mutual_friends' && (
-              <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 flex flex-col items-center justify-center h-full text-center">
-                <img src="https://discord.com/assets/212e30e47232be03033a.svg" alt="No friends" className="w-48 mb-4 opacity-50 grayscale" />
-                <p className="text-[#949ba4]">Không có bạn chung nào.</p>
+              <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                {loadingMutualFriends ? (
+                  <div className="flex flex-col items-center justify-center h-full text-center mt-10">
+                    <div className="w-8 h-8 border-4 border-[#5865F2] border-t-transparent rounded-full animate-spin mb-4"></div>
+                    <p className={textMuted}>Đang tải...</p>
+                  </div>
+                ) : mutualFriends.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full text-center mt-10">
+                    <img src="https://discord.com/assets/212e30e47232be03033a.svg" alt="No friends" className="w-48 mb-4 opacity-50 grayscale" />
+                    <p className={textMuted}>Không có bạn chung nào.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {mutualFriends.map(f => (
+                      <div key={f._id} className="relative flex items-center p-2 rounded hover:bg-[#35373c]/80 transition-all cursor-pointer group overflow-hidden mb-1">
+                        {/* Nameplate background */}
+                        {(f.activeNameplateStaticUrl || f.activeNameplateAnimatedUrl) && (
+                          <div className="absolute inset-0 z-0 pointer-events-none">
+                            <div className="absolute inset-0 opacity-80 mix-blend-screen">
+                              {f.activeNameplateStaticUrl && (
+                                <img src={f.activeNameplateStaticUrl} className="absolute inset-0 w-full h-full object-cover object-left group-hover:opacity-0 transition-opacity" alt="" />
+                              )}
+                              {f.activeNameplateAnimatedUrl && (
+                                <img src={f.activeNameplateAnimatedUrl} className="absolute inset-0 w-full h-full object-cover object-left opacity-0 group-hover:opacity-100 transition-opacity" alt="" />
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        
+                        <div className="relative z-10 flex items-center gap-3 w-full">
+                          <div className={`relative shrink-0 w-10 h-10 rounded-full p-[2px] transition-all duration-300 ${(f.activeFrameAnimatedUrl || f.activeFrameStaticUrl) ? '' : 'bg-transparent'}`}>
+                            <div className="w-full h-full rounded-full overflow-hidden border border-slate-900 bg-slate-800">
+                              <img 
+                                src={f.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(f.username || 'U')}&background=2b2d31&color=fff`} 
+                                alt={f.username} 
+                                className="w-full h-full object-cover" 
+                              />
+                            </div>
+                            {(f.activeFrameAnimatedUrl || f.activeFrameStaticUrl) && (
+                              <div className="absolute -inset-[13%] pointer-events-none z-20">
+                                {f.activeFrameStaticUrl && (
+                                  <img src={f.activeFrameStaticUrl} alt="frame" className="w-full h-full object-contain pointer-events-none group-hover:opacity-0 transition-opacity" />
+                                )}
+                                {f.activeFrameAnimatedUrl && (
+                                  <img src={f.activeFrameAnimatedUrl} alt="frame" className="w-full h-full object-contain pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                )}
+                              </div>
+                            )}
+                          </div>
+                          <span className={`text-[15px] font-semibold truncate transition-all flex items-center gap-1 drop-shadow-md ${textPrimary} group-hover:text-black`}>
+                            {f.displayName || f.username}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
             </div>

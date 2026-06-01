@@ -32,6 +32,8 @@ export default function ChatPage() {
   const communityMembers = outletContext?.communityMembers || [];
   const myCommunities = outletContext?.myCommunities || [];
   const communityChannels = outletContext?.communityChannels || [];
+  const onlineUserIds = outletContext?.onlineUserIds || new Set();
+  const handleSelectCommunity = outletContext?.handleSelectCommunity;
   const user = useSelector((state) => state.auth.user);
   
   const [messages, setMessages] = useState([]);
@@ -848,7 +850,8 @@ export default function ChatPage() {
                           ...sender,
                           realUsername: sender.username,
                           username: cMember?.nickname || sender.displayName || sender.username,
-                          role: cMember?.role || 'member'
+                          role: cMember?.role || 'member',
+                          isOnline: onlineUserIds.has(sender._id || sender.id)
                         },
                         position: { top: rect.top, left: rect.right + 12 }
                       });
@@ -929,7 +932,8 @@ export default function ChatPage() {
                             ...sender,
                             realUsername: sender.username,
                             username: cMember?.nickname || sender.displayName || sender.username,
-                            role: cMember?.role || 'member'
+                            role: cMember?.role || 'member',
+                            isOnline: onlineUserIds.has(sender._id || sender.id)
                           },
                           position: { top: rect.top - 40, left: rect.left }
                         });
@@ -1395,7 +1399,7 @@ export default function ChatPage() {
                           setReactionDetailModal(null);
                           setProfilePopout({
                             isOpen: true,
-                            member: u,
+                            member: { ...u, isOnline: onlineUserIds.has(u._id || u.id) },
                             position: { top: Math.min(rect.top, window.innerHeight - 400), left: rect.right + 12 }
                           });
                         }}
@@ -1618,6 +1622,11 @@ export default function ChatPage() {
         member={profilePopout.member}
         position={profilePopout.position}
         currentCommunity={selectedCommunity}
+        myCommunities={myCommunities}
+        onSelectCommunity={(c) => {
+          setProfilePopout({ isOpen: false, member: null, position: null });
+          if (handleSelectCommunity) handleSelectCommunity(c);
+        }}
         onOpenFullProfile={(memberObj) => {
           setProfilePopout({ isOpen: false, member: null, position: null });
           setFullProfileUser(memberObj);
@@ -1628,6 +1637,11 @@ export default function ChatPage() {
         isOpen={!!fullProfileUser}
         onClose={() => setFullProfileUser(null)}
         member={fullProfileUser}
+        myCommunities={myCommunities}
+        onSelectCommunity={(c) => {
+          setFullProfileUser(null);
+          if (handleSelectCommunity) handleSelectCommunity(c);
+        }}
       />
 
       {/* Forward Message Modal */}

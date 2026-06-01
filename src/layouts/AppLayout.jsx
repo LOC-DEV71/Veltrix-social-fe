@@ -849,7 +849,7 @@ export default function AppLayout() {
 
         {/* Content Outlet */}
         <div className="flex-grow overflow-hidden">
-          <Outlet context={{ selectedCommunity, communityMembers, myCommunities, communityChannels }} />
+          <Outlet context={{ selectedCommunity, communityMembers, myCommunities, communityChannels, onlineUserIds, handleSelectCommunity }} />
         </div>
       </div>
 
@@ -909,6 +909,8 @@ export default function AppLayout() {
                         activeFrameStaticUrl: memberUser.activeFrameStaticUrl,
                         activeNameplateAnimatedUrl: memberUser.activeNameplateAnimatedUrl,
                         activeNameplateStaticUrl: memberUser.activeNameplateStaticUrl,
+                        activeProfileEffectAnimatedUrl: memberUser.activeProfileEffectAnimatedUrl,
+                        activeProfileEffectStaticUrl: memberUser.activeProfileEffectStaticUrl,
                         isOnline: isOnline,
                         role: role,
                         bannerColor: memberUser.bannerColor,
@@ -1001,6 +1003,11 @@ export default function AppLayout() {
         member={selectedProfileUser}
         position={profileModalPos}
         currentCommunity={selectedCommunity}
+        myCommunities={myCommunities}
+        onSelectCommunity={(c) => {
+          setSelectedProfileUser(null);
+          handleSelectCommunity(c);
+        }}
         onOpenFullProfile={(memberObj) => {
           setSelectedProfileUser(null);
           setFullProfileUser(memberObj);
@@ -1011,6 +1018,11 @@ export default function AppLayout() {
         isOpen={!!fullProfileUser}
         onClose={() => setFullProfileUser(null)}
         member={fullProfileUser}
+        myCommunities={myCommunities}
+        onSelectCommunity={(c) => {
+          setFullProfileUser(null);
+          handleSelectCommunity(c);
+        }}
       />
 
       {/* Full Screen Settings Overlay */}
@@ -1100,6 +1112,8 @@ export default function AppLayout() {
                       activeFrameStaticUrl: memberUser.activeFrameStaticUrl,
                       activeNameplateAnimatedUrl: memberUser.activeNameplateAnimatedUrl,
                       activeNameplateStaticUrl: memberUser.activeNameplateStaticUrl,
+                      activeProfileEffectAnimatedUrl: memberUser.activeProfileEffectAnimatedUrl,
+                      activeProfileEffectStaticUrl: memberUser.activeProfileEffectStaticUrl,
                       isOnline: onlineUserIds.has(memberUser._id || memberUser.id),
                       role: member.role || 'member',
                       bannerColor: memberUser.bannerColor,

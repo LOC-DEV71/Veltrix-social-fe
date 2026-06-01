@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import axiosClient from '../services/axiosClient';
 import { logout as reduxLogout } from '../redux/slices/authSlice';
 import CustomStatusModal from './CustomStatusModal';
+import LoopingAPNG from './LoopingAPNG';
 
 export default function UserSettingsModal({ isOpen, onClose, initialTab = 'account', myCommunities = [], selectedCommunity = null }) {
   const user = useSelector((state) => state.auth.user);
@@ -64,6 +65,10 @@ export default function UserSettingsModal({ isOpen, onClose, initialTab = 'accou
   const [activeNameplate, setActiveNameplate] = useState(user?.activeNameplate || null);
   const [availableNameplates, setAvailableNameplates] = useState(false);
   const [isNameplateModalOpen, setIsNameplateModalOpen] = useState(false);
+  
+  const [activeProfileEffect, setActiveProfileEffect] = useState(user?.activeProfileEffect || null);
+  const [availableProfileEffects, setAvailableProfileEffects] = useState([]);
+  const [isProfileEffectModalOpen, setIsProfileEffectModalOpen] = useState(false);
 
   // Edit Account States
   const [isEditAccountModalOpen, setIsEditAccountModalOpen] = useState(false);
@@ -84,6 +89,7 @@ export default function UserSettingsModal({ isOpen, onClose, initialTab = 'accou
       setBannerFile(null);
       setActiveFrame(user.activeFrame || null);
       setActiveNameplate(user.activeNameplate || null);
+      setActiveProfileEffect(user.activeProfileEffect || null);
       setAvatarPreview(user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.username || 'User')}&background=2b2d31&color=fff`);
     }
   }, [user]);
@@ -129,6 +135,11 @@ export default function UserSettingsModal({ isOpen, onClose, initialTab = 'accou
             .filter(item => item.categorySlug === 'bang-ten' || item.category?.slug === 'bang-ten')
             .map(item => ({ ...item.product, expiresAt: item.expiresAt, isPremiumPerk: item.isPremiumPerk }));
           setAvailableNameplates(nameplates);
+
+          const profileEffects = res.data.data
+            .filter(item => item.categorySlug === 'hieu-ung-ho-so' || item.category?.slug === 'hieu-ung-ho-so')
+            .map(item => ({ ...item.product, expiresAt: item.expiresAt, isPremiumPerk: item.isPremiumPerk }));
+          setAvailableProfileEffects(profileEffects);
         }
       } catch (e) {
         console.error("Failed to fetch frames");
@@ -170,6 +181,7 @@ export default function UserSettingsModal({ isOpen, onClose, initialTab = 'accou
       if (bannerPreview === null && user.bannerImage) formData.append('removeBanner', 'true');
       formData.append('activeFrame', activeFrame?._id || '');
       formData.append('activeNameplate', activeNameplate?._id || '');
+      formData.append('activeProfileEffect', activeProfileEffect?._id || '');
       if (avatarFile) formData.append('avatarFile', avatarFile);
 
       await axiosClient.put('/api/auth/profile', formData, {
@@ -692,7 +704,7 @@ export default function UserSettingsModal({ isOpen, onClose, initialTab = 'accou
                           <h4 className="text-[#b5bac1] text-[11px] font-bold uppercase tracking-wider">Hiệu Ứng Hồ Sơ</h4>
                           <span className="text-[9px] bg-gradient-to-r from-amber-500 to-pink-500 text-white px-1.5 py-0.5 rounded-full font-bold uppercase">Premium</span>
                         </div>
-                        <button className="bg-[#5865F2] hover:bg-[#4752C4] text-white px-4 py-2 rounded text-[13px] font-semibold transition-colors">Thay đổi hiệu ứng</button>
+                        <button onClick={() => setIsProfileEffectModalOpen(true)} className="bg-[#5865F2] hover:bg-[#4752C4] text-white px-4 py-2 rounded text-[13px] font-semibold transition-colors">Thay đổi hiệu ứng</button>
                       </div>
                       <div className="h-[1px] bg-[#3f4147] w-full" />
                       <div>
@@ -747,11 +759,11 @@ export default function UserSettingsModal({ isOpen, onClose, initialTab = 'accou
                 <div>
                   <h4 className="text-[#b5bac1] text-[11px] font-bold uppercase tracking-wider mb-2">Xem trước</h4>
                   <div className="bg-[#111214] rounded-lg border border-[#1f2023] overflow-hidden shadow-lg w-full p-1"
-                       style={{ background: `linear-gradient(to bottom, ${themePrimary || bannerColor} 0%, ${themeAccent || '#111214'} 100%)` }}>
+                       style={{ background: `linear-gradient(135deg, ${themePrimary || bannerColor} 0%, ${bannerColor} 50%, ${themeAccent || '#111214'} 100%)` }}>
                     <div 
                       className="w-full relative overflow-hidden rounded-[6px]"
                       style={{
-                        background: `linear-gradient(to bottom, color-mix(in srgb, ${themePrimary || bannerColor} 25%, #111214) 0%, color-mix(in srgb, ${themeAccent || '#111214'} 25%, #111214) 100%)`
+                        background: `linear-gradient(135deg, color-mix(in srgb, ${themePrimary || bannerColor} 35%, #111214) 0%, color-mix(in srgb, ${bannerColor} 35%, #111214) 50%, color-mix(in srgb, ${themeAccent || '#111214'} 35%, #111214) 100%)`
                       }}
                     >
                       {isPremium && bannerPreview ? (
@@ -759,19 +771,45 @@ export default function UserSettingsModal({ isOpen, onClose, initialTab = 'accou
                       ) : (
                         <div className="h-[100px] w-full" style={{ backgroundColor: bannerColor }} />
                       )}
-                      <div className="px-4 pb-4 relative">
-                        <div className="absolute -top-[45px] flex items-end gap-3 w-full">
-                          <div 
-                            className="relative shrink-0 w-[80px] h-[80px] rounded-full p-[5px]"
-                            style={{ backgroundColor: themePrimary || bannerColor }}
-                          >
-                            {(activeFrame?.animatedUrl || user?.activeFrameAnimatedUrl) && (
-                              <img src={activeFrame?.animatedUrl || user?.activeFrameAnimatedUrl} className="absolute -inset-[13px] w-[106px] h-[106px] max-w-none z-20 pointer-events-none" alt="Frame" />
-                            )}
-                            <div className="w-full h-full rounded-full overflow-hidden bg-[#1e1f22] relative z-10">
+                      {/* Blurred Banner Background */}
+                      {isPremium && bannerPreview && (
+                        <div 
+                          className="absolute top-0 left-0 w-full h-[50%] z-0 pointer-events-none"
+                          style={{
+                            backgroundImage: `url("${bannerPreview}")`,
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center',
+                            filter: 'blur(6px)',
+                            opacity: 1,
+                            WebkitMaskImage: 'linear-gradient(to bottom, black 30%, transparent 100%)',
+                            maskImage: 'linear-gradient(to bottom, black 30%, transparent 100%)',
+                            transform: 'scale(1.15)',
+                          }}
+                        />
+                      )}
+                      
+                      {activeProfileEffect && (
+                        <div className="absolute inset-0 z-[100] pointer-events-none overflow-hidden rounded-[6px]">
+                           <LoopingAPNG src={activeProfileEffect.animatedUrl || activeProfileEffect.staticUrl} className="w-full h-full object-fill opacity-90" alt="Profile Effect" duration={3000} />
+                        </div>
+                      )}
+                      
+                      <div 
+                        className={`h-[120px] w-full shrink-0 relative z-10 ${bannerPreview ? 'bg-cover bg-center' : ''}`} 
+                        style={bannerPreview ? { backgroundImage: `url(${bannerPreview})` } : { backgroundColor: bannerColor }} 
+                      />
+                      <div className="px-4 pb-4 relative flex-1 flex flex-col z-10">
+                        <div className="absolute -top-[55px] flex items-end gap-3 w-full">
+                          <div className="relative shrink-0 w-[96px] h-[96px] rounded-full p-[6px]" style={{ backgroundColor: bannerPreview ? '#111214' : 'transparent' }}>
+                            <div className="w-full h-full rounded-full overflow-hidden bg-[#1e1f22]">
                               <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
                             </div>
-                            <div className="absolute bottom-1 right-1 w-5 h-5 rounded-full bg-[#23a55a] border-[4px] z-30" style={{ borderColor: themePrimary || bannerColor }} />
+                            {activeFrame && (
+                              <div className="absolute -inset-[13%] pointer-events-none z-20">
+                                <img src={activeFrame.animatedUrl || activeFrame.staticUrl} alt="frame" className="w-full h-full object-contain pointer-events-none" />
+                              </div>
+                            )}
+                            <div className="absolute bottom-1 right-1 w-5 h-5 rounded-full bg-[#23a55a] border-[4px] z-30" style={{ borderColor: bannerPreview ? '#111214' : bannerColor }} />
                           </div>
                           <div onClick={() => setIsCustomStatusOpen(true)} className="bg-black/40 backdrop-blur-md border border-[#1f2023] rounded-xl px-2.5 py-1.5 text-xs text-[#dbdee1] font-medium shadow-md mb-2 flex-1 flex flex-col justify-center gap-0.5 cursor-pointer max-w-[160px] transition-colors hover:bg-black/60 z-20">
                             {user?.customStatus?.text || user?.customStatus?.emoji ? (
@@ -1258,6 +1296,56 @@ export default function UserSettingsModal({ isOpen, onClose, initialTab = 'accou
                         {(nameplate.expiresAt || nameplate.isPremiumPerk) && (
                           <div className="relative z-10 px-2 py-0.5 bg-pink-500/90 text-white text-[9px] font-bold rounded-full shadow-lg whitespace-nowrap border border-pink-400 ml-auto">
                             {getRemainingTime(nameplate.expiresAt, nameplate.isPremiumPerk)}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Profile Effect Modal */}
+        {isProfileEffectModalOpen && (
+          <div className="fixed inset-0 z-[400] flex items-center justify-center bg-black/70 animate-in fade-in duration-200">
+            <div className="bg-[#313338] w-full max-w-[600px] rounded-xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+              <div className="p-6 pb-4 flex items-center justify-between border-b border-[#1f2023]">
+                <h2 className="text-[#f2f3f5] text-xl font-bold">Thay Đổi Hiệu Ứng Hồ Sơ</h2>
+                <button onClick={() => setIsProfileEffectModalOpen(false)} className="text-[#b5bac1] hover:text-[#dbdee1] transition-colors">
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+              
+              <div className="p-6 overflow-y-auto max-h-[60vh] custom-scrollbar">
+                <div className="grid grid-cols-3 gap-4">
+                  {/* Default no effect */}
+                  <div className="relative w-full h-[150px] rounded-lg bg-[#2b2d31] border-2 border-transparent flex flex-col items-center justify-center cursor-pointer hover:border-indigo-500 transition-colors group" onClick={() => { setActiveProfileEffect(null); setHasChanges(true); setIsProfileEffectModalOpen(false); }}>
+                    <div className="w-16 h-16 rounded-full border border-dashed border-[#80848e] flex items-center justify-center mb-2">
+                      <X className="w-8 h-8 text-[#80848e]" />
+                    </div>
+                    <span className="text-[#dbdee1] text-sm font-medium">Bỏ hiệu ứng</span>
+                  </div>
+                  
+                  {/* Dynamic Effects from Backend */}
+                  {availableProfileEffects.map(effect => {
+                    return (
+                      <div key={effect._id} className="relative w-full h-[150px] rounded-lg bg-[#2b2d31] border-2 border-[#1f2023] flex flex-col items-center justify-center cursor-pointer hover:border-indigo-500 transition-colors group overflow-hidden" 
+                        onClick={() => { 
+                          setActiveProfileEffect(effect);
+                          setHasChanges(true); 
+                          setIsProfileEffectModalOpen(false); 
+                        }}>
+                        <div className="absolute inset-0 z-10 pointer-events-none">
+                          <img src={effect.animatedUrl || effect.staticUrl} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" alt={effect.name} />
+                        </div>
+                        
+                        <div className="absolute inset-0 bg-black/40 z-20" />
+                        <span className="text-[#f2f3f5] font-semibold text-[13px] relative z-30 drop-shadow-md px-2 text-center">{effect.name}</span>
+                        {(effect.expiresAt || effect.isPremiumPerk) && (
+                          <div className="relative z-30 px-2 py-0.5 mt-2 bg-pink-500/90 text-white text-[9px] font-bold rounded-full shadow-lg whitespace-nowrap border border-pink-400">
+                            {getRemainingTime(effect.expiresAt, effect.isPremiumPerk)}
                           </div>
                         )}
                       </div>

@@ -3,7 +3,7 @@ import { Smile, UserPlus, MoreHorizontal, CheckCircle2, XCircle } from 'lucide-r
 import { useSelector } from 'react-redux';
 import friendService from '../services/client/friendService';
 
-export default function MemberProfilePopout({ isOpen, onClose, member, position, currentCommunity, onOpenFullProfile }) {
+export default function MemberProfilePopout({ isOpen, onClose, member, position, currentCommunity, onOpenFullProfile, myCommunities = [], onSelectCommunity }) {
   const popoutRef = useRef(null);
   const currentUser = useSelector((state) => state.auth.user);
   const isSelf = String(currentUser?._id || currentUser?.id) === String(member?._id || member?.id);
@@ -205,19 +205,34 @@ export default function MemberProfilePopout({ isOpen, onClose, member, position,
 
             <div className="h-[1px] w-full bg-[#3f4147] mb-3" />
 
-            {/* Mutual servers mock */}
-            {currentCommunity && (
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-6 h-6 rounded bg-[#2b2d31] flex items-center justify-center shrink-0 overflow-hidden">
-                  {currentCommunity.icon ? (
-                    <img src={currentCommunity.icon} alt={currentCommunity.name} className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="text-[10px] text-[#dbdee1]">{currentCommunity.name?.charAt(0)}</span>
-                  )}
+            {/* Mutual servers */}
+            {!isSelf && (() => {
+              const targetId = String(member._id || member.id);
+              const mutualCommunities = myCommunities.filter(c => c.members?.some(m => String(m.user?._id || m.user) === targetId));
+              if (mutualCommunities.length === 0 && !currentCommunity) return null;
+              
+              const displayComm = mutualCommunities.length > 0 ? mutualCommunities[0] : currentCommunity;
+              
+              return (
+                <div 
+                  className="flex items-center gap-2 mb-4 p-1 -ml-1 rounded hover:bg-[#35373c]/50 transition-colors cursor-pointer"
+                  onClick={() => {
+                    if (onSelectCommunity && displayComm) {
+                      onSelectCommunity(displayComm);
+                    }
+                  }}
+                >
+                  <div className="w-6 h-6 rounded bg-[#2b2d31] flex items-center justify-center shrink-0 overflow-hidden">
+                    {displayComm?.icon ? (
+                      <img src={displayComm.icon.startsWith('http') || displayComm.icon.startsWith('data:') ? displayComm.icon : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${displayComm.icon.startsWith('/') ? '' : '/'}${displayComm.icon}`} alt={displayComm.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-[10px] text-[#dbdee1]">{displayComm?.name?.charAt(0)}</span>
+                    )}
+                  </div>
+                  <span className="text-xs font-semibold text-[#dbdee1]">{mutualCommunities.length > 0 ? mutualCommunities.length : 1} Máy chủ chung</span>
                 </div>
-                <span className="text-xs font-semibold text-[#dbdee1]">1 Máy chủ chung</span>
-              </div>
-            )}
+              );
+            })()}
 
             {/* Roles */}
             <div className="flex flex-wrap gap-1.5 mb-4">
