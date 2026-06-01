@@ -87,6 +87,16 @@ export default function AppLayout() {
   const [voiceChannelUsers, setVoiceChannelUsers] = useState({}); // channelId -> [users]
 
   useEffect(() => {
+    // Nếu người dùng điều hướng ra khỏi cộng đồng (ví dụ: sang /shop hoặc /friends), xóa state cộng đồng hiện tại
+    if (!location.pathname.startsWith('/community/')) {
+      setSelectedCommunity(null);
+      setCommunityChannels([]);
+      setCommunityMembers([]);
+      setSelectedChannel(null);
+    }
+  }, [location.pathname]);
+
+  useEffect(() => {
     if (user?._id) {
       axiosClient.get('/api/communities')
         .then(res => {
@@ -139,13 +149,24 @@ export default function AppLayout() {
       ]);
       // axiosClient returns { data: { success, data: [...] } }
       const channels = chRes.data?.data || [];
-      setCommunityChannels(Array.isArray(channels) ? channels : []);
+      const channelsArray = Array.isArray(channels) ? channels : [];
+      setCommunityChannels(channelsArray);
       
       const fullCommunity = memRes.data?.data;
       if (fullCommunity?.members) {
         setCommunityMembers(fullCommunity.members);
       } else {
         setCommunityMembers([]);
+      }
+
+      // Automatically navigate to the first text channel if currently not in this community's channels
+      const currentChannelId = location.pathname.split('/').pop();
+      const firstTextChannel = channelsArray.find(ch => ch.type === 'text');
+      if (firstTextChannel && currentChannelId !== firstTextChannel._id) {
+        setSelectedChannel(firstTextChannel);
+        navigate(`/community/${community._id}/channel/${firstTextChannel._id}`, {
+          state: { communityName: community.name, channelName: firstTextChannel.name }
+        });
       }
     } catch (err) {
       console.error('Lỗi lấy kênh/thành viên:', err);

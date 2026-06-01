@@ -6,25 +6,10 @@ import { useNavigate } from 'react-router-dom';
 import { Mic, MicOff, Headphones, HeadphoneOff, PhoneOff, Volume2, Sparkles, Signal, SignalHigh, Users, Video, VideoOff, Pin, MonitorUp, MonitorX } from 'lucide-react';
 import { useTitle } from '../../hooks/useTitle';
 
-const ICE_SERVERS = {
+const DEFAULT_ICE_SERVERS = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-    {
-      urls: "turn:openrelay.metered.ca:80",
-      username: "openrelayproject",
-      credential: "openrelayproject"
-    },
-    {
-      urls: "turn:openrelay.metered.ca:443",
-      username: "openrelayproject",
-      credential: "openrelayproject"
-    },
-    {
-      urls: "turn:openrelay.metered.ca:443?transport=tcp",
-      username: "openrelayproject",
-      credential: "openrelayproject"
-    }
+    { urls: 'stun:stun1.l.google.com:19302' }
   ]
 };
 
@@ -61,6 +46,7 @@ export default function VoiceChannelPage() {
   const screenPeersRef = useRef({}); // peerId -> { pc } for the screen pseudo-user
   const audioContextRef = useRef(null);
   const analyserRefs = useRef({}); // userId -> analyserNode
+  const iceServersConfigRef = useRef(DEFAULT_ICE_SERVERS);
 
   const currentChannel = communityChannels?.find(ch => ch._id === channelId);
 
@@ -121,6 +107,23 @@ export default function VoiceChannelPage() {
 
     const initVoice = async () => {
       try {
+        const token = localStorage.getItem('token');
+        const apiUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+        try {
+          const res = await fetch(`${apiUrl}/api/webrtc/ice-servers`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (res.ok) {
+            const servers = await res.json();
+            if (servers && servers.length > 0) {
+              iceServersConfigRef.current = { iceServers: servers };
+              addDebug('ICE servers fetched successfully.');
+            }
+          }
+        } catch (error) {
+          console.error("Could not fetch ICE servers", error);
+        }
+
         addDebug('Requesting camera/mic permissions...');
         // Get user audio & video
         let stream;
@@ -209,7 +212,7 @@ export default function VoiceChannelPage() {
         // Send initial state to others
         socket.emit('voice_state_update', { 
           channelId, 
-          state: { isMuted, isDeafened } 
+          state: { isMuted, isDeafened, isVideoOn } 
         });
 
         // When we get the list of existing users in the voice channel
@@ -237,7 +240,7 @@ export default function VoiceChannelPage() {
           // Reply with my current state to the new user implicitly by broadcasting again
           socket.emit('voice_state_update', { 
             channelId, 
-            state: { isMuted, isDeafened } 
+            state: { isMuted, isDeafened, isVideoOn } 
           });
         });
 
@@ -281,10 +284,15 @@ export default function VoiceChannelPage() {
           }
           
           try {
+            const isPolite = user._id > from;
             if (pc.signalingState !== 'stable') {
-              // Glare resolution: if we receive an offer while not stable, 
-              // we might need to rollback or ignore. For simplicity, just set remote.
               console.warn("Signaling state is not stable, glare detected");
+              if (!isPolite) {
+                addDebug(`Glare: I am impolite, ignoring offer from ${from}`);
+                return;
+              }
+              addDebug(`Glare: I am polite, rolling back to accept offer from ${from}`);
+              await pc.setLocalDescription({ type: "rollback" });
             }
             await pc.setRemoteDescription(new RTCSessionDescription(offer));
             const answer = await pc.createAnswer();
@@ -357,7 +365,7 @@ export default function VoiceChannelPage() {
       return peersRef.current[peerId].pc;
     }
 
-    const pc = new RTCPeerConnection(ICE_SERVERS);
+    const pc = new RTCPeerConnection(iceServersConfigRef.current);
 
     // Add local audio tracks
     if (stream) {
@@ -369,11 +377,10 @@ export default function VoiceChannelPage() {
     // Handle incoming remote audio/video
     pc.ontrack = (event) => {
       setRemoteStreams(prev => {
-        const stream = event.streams[0];
-        // Wrap in a new MediaStream to force React to update the srcObject
+        const tracks = pc.getReceivers().map(r => r.track).filter(Boolean);
         return {
           ...prev,
-          [peerId]: new MediaStream(stream.getTracks())
+          [peerId]: new MediaStream(tracks)
         };
       });
     };
@@ -387,22 +394,25 @@ export default function VoiceChannelPage() {
       }
     };
 
-    let isNegotiating = false;
+    let negotiationPending = false;
     pc.onsignalingstatechange = () => {
-      isNegotiating = (pc.signalingState !== 'stable');
+      if (pc.signalingState === 'stable' && negotiationPending) {
+        negotiationPending = false;
+        pc.onnegotiationneeded();
+      }
     };
 
     pc.onnegotiationneeded = async () => {
-      if (isNegotiating) return;
+      if (pc.signalingState !== 'stable') {
+        negotiationPending = true;
+        return;
+      }
       try {
-        isNegotiating = true;
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
         socket.emit('voice_offer', { to: peerId, offer });
       } catch (err) {
         console.error("Negotiation error:", err);
-      } finally {
-        isNegotiating = false;
       }
     };
 
@@ -505,7 +515,7 @@ export default function VoiceChannelPage() {
         screenSocket.on('voice_users', (users) => {
           users.forEach(u => {
             if (u._id !== user._id && u._id !== pseudoUser._id) {
-              const pc = new RTCPeerConnection(ICE_SERVERS);
+              const pc = new RTCPeerConnection(iceServersConfigRef.current);
               screenStream.getTracks().forEach(t => pc.addTrack(t, screenStream));
               
               pc.onicecandidate = e => {
@@ -547,7 +557,7 @@ export default function VoiceChannelPage() {
 
         screenSocket.on('voice_offer', async ({ from, offer }) => {
           // If a new user joins later, they will send an offer to the pseudo-user
-          const pc = new RTCPeerConnection(ICE_SERVERS);
+          const pc = new RTCPeerConnection(iceServersConfigRef.current);
           screenStream.getTracks().forEach(t => pc.addTrack(t, screenStream));
           
           pc.onicecandidate = e => {
