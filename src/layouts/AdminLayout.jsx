@@ -28,10 +28,11 @@ export default function AdminLayout() {
     { name: 'Bảng Thống Kê', path: '/admin', icon: <LayoutDashboard className="w-5 h-5" /> },
     { name: 'Quản lý Users', path: '/admin/users', icon: <Users className="w-5 h-5" /> },
     { name: 'Quản lý Products', path: '/admin/products', icon: <ShoppingBag className="w-5 h-5" /> },
+    { name: 'Sản Phẩm Premium', path: '/admin/premium-products', icon: <Sparkles className="w-5 h-5" /> },
+    { name: 'Danh Mục Sản Phẩm', path: '/admin/categories', icon: <FolderTree className="w-5 h-5" /> },
     { name: 'Tài Khoản Nội Bộ', path: '/admin/accounts', icon: <ShieldCheck className="w-5 h-5" /> },
     { name: 'Quản Lý Vai Trò', path: '/admin/roles', icon: <UserCheck className="w-5 h-5" /> },
     { name: 'Quản Lý Quyền Hạn', path: '/admin/permissions', icon: <Key className="w-5 h-5" /> },
-    { name: 'Danh Mục Sản Phẩm', path: '/admin/categories', icon: <FolderTree className="w-5 h-5" /> },
   ];
 
   const handleLogout = async () => {

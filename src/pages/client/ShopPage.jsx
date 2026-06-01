@@ -46,24 +46,68 @@ const fallbackMockFrames = [
   }
 ];
 
-function FrameCard({ frame }) {
-  const { user, buyFrame, equipFrame } = useUserStore();
+function FrameCard({ frame, inventoryItems, onShowPremiumModal }) {
+  const { user, buyFrame, equipFrame, claimPremiumProduct } = useUserStore();
   const [isHovered, setIsHovered] = useState(false);
   const [purchaseStatus, setPurchaseStatus] = useState({ show: false, success: false, message: '' });
 
   const isNameplate = frame.category?.slug === 'bang-ten' || frame.categorySlug === 'bang-ten';
-  const isOwned = isNameplate 
+  const isCombo = frame.category?.slug === 'combo' || frame.categorySlug === 'combo' || frame.isCombo;
+  
+  const frameItem = isCombo && frame.comboItems ? frame.comboItems.find(item => item.category?.slug === 'khung-vien') : null;
+  const nameplateItem = isCombo && frame.comboItems ? frame.comboItems.find(item => item.category?.slug === 'bang-ten') : null;
+  
+  let effectivePrice = frame.price;
+  let isFullyOwnedCombo = false;
+  let originalPrice = frame.price;
+
+  if (isCombo && frame.comboItems && frame.comboItems.length > 0) {
+    let discount = 0;
+    let ownedCount = 0;
+    frame.comboItems.forEach(item => {
+      const catSlug = item.category?.slug;
+      const isItemFrame = catSlug === 'khung-vien';
+      const isItemNameplate = catSlug === 'bang-ten';
+      let alreadyOwned = false;
+      if (isItemFrame && user.ownedFrames?.includes(item._id)) alreadyOwned = true;
+      if (isItemNameplate && user.ownedNameplates?.includes(item._id)) alreadyOwned = true;
+      
+      if (alreadyOwned) {
+        discount += item.price || 0;
+        ownedCount++;
+      }
+    });
+    effectivePrice = Math.max(0, effectivePrice - discount);
+    if (ownedCount === frame.comboItems.length) {
+      isFullyOwnedCombo = true;
+    }
+  }
+
+  const isOwned = isCombo ? isFullyOwnedCombo : (isNameplate 
     ? (user.ownedNameplates?.includes(frame.id) || user.ownedFrames?.includes(frame.id)) 
-    : user.ownedFrames?.includes(frame.id);
-  const isActive = isNameplate 
+    : user.ownedFrames?.includes(frame.id));
+    
+  const isActive = isCombo ? false : (isNameplate 
     ? (user.activeNameplate === frame.id || user.activeFrame === frame.id) 
-    : user.activeFrame === frame.id;
+    : user.activeFrame === frame.id);
 
   const handleAction = async () => {
     if (isOwned) {
       equipFrame(frame.id);
     } else {
-      const result = await buyFrame(frame.id, frame.price, frame.isPremium);
+      let result;
+      // Nếu là sản phẩm premium (miễn phí)
+      if (frame.isPremium) {
+        if (!user.isPremium) {
+          onShowPremiumModal();
+          return;
+        }
+        result = await claimPremiumProduct(frame.id);
+      } else {
+        // Mua bằng coin
+        result = await buyFrame(frame.id, effectivePrice, false, false);
+      }
+
       setPurchaseStatus({
         show: true,
         success: result.success,
@@ -77,71 +121,118 @@ function FrameCard({ frame }) {
 
   return (
     <div 
-      className="bg-[#2b2d31] rounded-xl border border-[#1f2023] p-5 flex flex-col justify-between hover:shadow-[0_0_15px_rgba(99,102,241,0.15)] hover:border-indigo-500/30 transition-all duration-300 relative group"
+      className={`bg-[#2b2d31] rounded-xl border border-[#1f2023] p-5 flex flex-col justify-between hover:shadow-[0_0_15px_rgba(99,102,241,0.15)] hover:border-indigo-500/30 relative group ${isCombo ? 'sm:col-span-2 lg:col-span-2 xl:col-span-2' : ''}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Premium Badge */}
-      {frame.isPremium && (
-        <span className="absolute top-3 right-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1 z-1 shadow-md">
-          <Sparkles className="w-2.5 h-2.5" />
-          Premium
-        </span>
-      )}
-
       {/* Avatar Simulation Preview Area */}
-      <div className="flex flex-col items-center py-4 relative bg-[#1e1f22] rounded-lg border border-[#232428] mb-4">
-        <span className="text-[10px] text-[#949ba4] uppercase font-bold tracking-wider mb-3">Xem trước {isNameplate ? 'bảng tên' : 'khung'}</span>
-        
-        {/* Frame Wrapper */}
-        <div className={`relative ${isNameplate ? 'w-32 h-8 rounded' : 'w-24 h-24 rounded-full'} transition-all duration-300 ${isHovered ? 'scale-105 shadow-lg shadow-indigo-500/20' : ''} flex items-center justify-center overflow-hidden`}>
-          {isNameplate && (
-            <div className="absolute inset-0 z-0">
-              {isHovered ? (
-                <img src={frame.animatedUrl} className="w-full h-full object-cover opacity-50" alt="Animated" />
-              ) : (
-                <img src={frame.staticUrl} className="w-full h-full object-cover opacity-50" alt="Static" />
-              )}
-            </div>
-          )}
-
-          {/* Main Avatar inside frame */}
-          <div className={`${isNameplate ? 'w-6 h-6 z-10 mr-2 relative' : 'absolute inset-[13%]'} rounded-full overflow-hidden bg-[#313338]`}>
-            <img 
-              src={user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.username || 'User')}&background=2b2d31&color=fff`} 
-              alt="Preview Avatar" 
-              className="w-full h-full object-cover"
-            />
-          </div>
-
-          {isNameplate && (
-            <span className="text-white text-xs font-bold relative z-10 drop-shadow-md">{user.username}</span>
-          )}
-
-          {/* Actual Frame Overlay (Swapped on Hover) */}
-          {!isNameplate && (
-            <div className="absolute inset-0 pointer-events-none">
-              {isHovered ? (
-                <img 
-                  src={frame.animatedUrl} 
-                  alt="Animated frame" 
-                  className="w-full h-full object-cover rounded-full drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]"
+      {isCombo ? (
+        <div className="w-full relative mb-6 flex flex-col items-center">
+          <span className="text-[10px] text-[#949ba4] uppercase font-bold tracking-wider mb-3">Xem trước gói combo</span>
+          
+          <div className={`w-full h-[96px] rounded-lg overflow-hidden relative flex items-center p-4 shadow-md border border-[#3f4147] transition-all duration-300 ${isHovered ? 'shadow-lg shadow-indigo-500/30 ring-1 ring-indigo-400/50' : ''}`}>
+            {/* Background Nameplate */}
+            {nameplateItem && (
+              <div className="absolute inset-0 z-0 pointer-events-none">
+                <div className="absolute inset-0 opacity-80 mix-blend-screen">
+                  <img src={nameplateItem.staticUrl} className={`w-full h-full object-cover object-left absolute inset-0 ${isHovered ? 'hidden' : 'block'}`} alt="Static Nameplate" />
+                  <img src={nameplateItem.animatedUrl} className={`w-full h-full object-cover object-left absolute inset-0 ${isHovered ? 'block' : 'hidden'}`} alt="Animated Nameplate" />
+                </div>
+                <div 
+                  className="absolute inset-0 z-10 mix-blend-overlay"
+                  style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(220, 62, 151, 0.05) 20%, rgba(220, 62, 151, 0.1) 50%, rgba(220, 62, 151, 0.2) 100%)' }}
                 />
-              ) : (
+                <div className="absolute inset-0 z-10 bg-gradient-to-r from-black/60 via-black/30 to-transparent" />
+              </div>
+            )}
+            
+            <div className="relative z-10 flex items-center gap-4 w-full">
+              {/* Avatar + Frame */}
+              <div className={`relative shrink-0 w-16 h-16 rounded-full p-[2px] ${
+                frameItem ? 'bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 shadow-lg' : 'bg-[#1e1f22]'
+              }`}>
+                <div className="w-full h-full rounded-full overflow-hidden border border-slate-900 bg-slate-800">
+                  <img src={user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.username || 'User')}&background=2b2d31&color=fff`} alt={user?.username} className="w-full h-full rounded-full object-cover" />
+                </div>
+                
+                {frameItem && (
+                  <div className="absolute -inset-[15%] pointer-events-none z-20">
+                    <img 
+                      src={frameItem.staticUrl} 
+                      className={`w-full h-full object-contain pointer-events-none absolute inset-0 ${isHovered ? 'hidden' : 'block'}`} 
+                      alt="static frame" 
+                    />
+                    <img 
+                      src={frameItem.animatedUrl} 
+                      className={`w-full h-full object-contain pointer-events-none absolute inset-0 ${isHovered ? 'block' : 'hidden'}`} 
+                      alt="animated frame" 
+                    />
+                  </div>
+                )}
+                
+                <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-[#313338] bg-[#23a55a] z-30 shadow-sm" />
+              </div>
+              
+              {/* User Info */}
+              <div className="flex flex-col drop-shadow-md truncate">
+                <span className="text-white font-bold text-lg truncate drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] leading-tight">{user?.displayName || user?.username}</span>
+                <span className="text-[#e3e5e8] text-sm truncate drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] mt-0.5">({user?.username})</span>
+              </div>
+            </div>
+          </div>
+          
+          <span className="text-[9px] text-[#80848e] mt-3 italic">
+            {isHovered ? '⚡ Đang chạy hiệu ứng động' : '👋 Di chuột vào để xem hiệu ứng'}
+          </span>
+        </div>
+      ) : (
+        <div className="flex flex-col items-center py-4 relative bg-[#1e1f22] rounded-lg border border-[#232428] mb-4">
+          <span className="text-[10px] text-[#949ba4] uppercase font-bold tracking-wider mb-3">Xem trước {isNameplate ? 'bảng tên' : 'khung'}</span>
+          
+          {/* Frame Wrapper */}
+          <div className={`relative ${isNameplate ? 'w-32 h-8 rounded' : 'w-24 h-24 rounded-full'} ${isHovered ? 'shadow-lg shadow-indigo-500/20' : ''} flex items-center justify-center overflow-hidden`}>
+            {isNameplate && (
+              <div className="absolute inset-0 z-0">
+                <img src={frame.staticUrl} className={`w-full h-full object-cover absolute inset-0 opacity-50 ${isHovered ? 'hidden' : 'block'}`} alt="Static" />
+                <img src={frame.animatedUrl} className={`w-full h-full object-cover absolute inset-0 opacity-50 ${isHovered ? 'block' : 'hidden'}`} alt="Animated" />
+              </div>
+            )}
+
+            {/* Main Avatar inside frame */}
+            <div className={`${isNameplate ? 'w-6 h-6 z-10 mr-2 relative' : 'absolute inset-[13%]'} rounded-full overflow-hidden bg-[#313338]`}>
+              <img 
+                src={user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.username || 'User')}&background=2b2d31&color=fff`} 
+                alt="Preview Avatar" 
+                className="w-full h-full object-cover"
+              />
+            </div>
+
+            {isNameplate && (
+              <span className="text-white text-xs font-bold relative z-10 drop-shadow-md">{user.username}</span>
+            )}
+
+            {/* Actual Frame Overlay (Swapped on Hover without unmounting) */}
+            {!isNameplate && (
+              <div className="absolute inset-0 pointer-events-none">
                 <img 
                   src={frame.staticUrl} 
                   alt="Static frame preview" 
-                  className="w-full h-full object-cover rounded-full drop-shadow-md"
+                  className={`w-full h-full object-cover rounded-full drop-shadow-md absolute inset-0 ${isHovered ? 'hidden' : 'block'}`}
                 />
-              )}
-            </div>
-          )}
-        </div>
+                <img 
+                  src={frame.animatedUrl} 
+                  alt="Animated frame" 
+                  className={`w-full h-full object-cover rounded-full drop-shadow-[0_0_8px_rgba(255,255,255,0.4)] absolute inset-0 ${isHovered ? 'block' : 'hidden'}`}
+                />
+              </div>
+            )}
+          </div>
 
-        <span className="text-[9px] text-[#80848e] mt-3 italic">
-          {isHovered ? '⚡ Đang chạy hiệu ứng động' : '👋 Di chuột vào để xem hiệu ứng'}
-        </span>
-      </div>
+          <span className="text-[9px] text-[#80848e] mt-3 italic">
+            {isHovered ? '⚡ Đang chạy hiệu ứng động' : '👋 Di chuột vào để xem hiệu ứng'}
+          </span>
+        </div>
+      )}
 
       {/* Frame Information */}
       <div className="space-y-2 flex-grow flex flex-col justify-between">
@@ -158,46 +249,76 @@ function FrameCard({ frame }) {
         <div className="pt-4 border-t border-[#232428] mt-3">
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs text-[#949ba4]">Giá bán</span>
-            {frame.isPremium ? (
+            {frame.isPremium && user?.isPremium ? (
               <span className="text-xs font-bold text-pink-400 flex items-center gap-1">
                 <Sparkles className="w-3.5 h-3.5" /> Miễn phí
               </span>
             ) : (
-              <span className="text-xs font-bold text-amber-500 flex items-center gap-1">
-                <Coins className="w-3.5 h-3.5" /> {frame.price} Coin
-              </span>
+              <div className="flex flex-col items-end">
+                {isCombo && effectivePrice < originalPrice && !isOwned && (
+                  <span className="text-[10px] text-emerald-400 line-through opacity-70 mb-0.5">
+                    {originalPrice} Coin
+                  </span>
+                )}
+                <span className="text-xs font-bold text-amber-500 flex items-center gap-1">
+                  <Coins className="w-3.5 h-3.5" /> {effectivePrice} Coin
+                </span>
+              </div>
             )}
           </div>
 
+          {/* Thời hạn sử dụng */}
+          {frame.premiumEndDate ? (
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs text-[#949ba4]">Đặc quyền đến</span>
+              <span className="text-xs font-bold text-pink-400">
+                {new Date(frame.premiumEndDate).toLocaleDateString('vi-VN')}
+              </span>
+            </div>
+          ) : frame.isPremium ? (
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs text-[#949ba4]">Đặc quyền Premium</span>
+              <span className="text-xs font-bold text-pink-400">
+                Theo thời hạn gói
+              </span>
+            </div>
+          ) : null}
+
           {/* Action Button */}
           {isOwned ? (
-            isActive ? (
-              <button 
-                disabled 
-                className="w-full py-2 bg-emerald-600/20 text-emerald-400 font-bold text-xs rounded-md border border-emerald-500/30 flex items-center justify-center gap-1.5"
-              >
-                <Check className="w-4 h-4" /> Đang trang bị
-              </button>
-            ) : (
-              <button 
-                onClick={handleAction}
-                className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white font-bold text-xs rounded-md transition-all cursor-pointer shadow-md"
-              >
-                Trang bị {isNameplate ? 'bảng tên' : 'khung'}
-              </button>
-            )
+            <div className={`flex flex-col gap-2`}>
+              {isCombo ? (
+                <button 
+                  disabled 
+                  className="w-full py-2 bg-emerald-600/20 text-emerald-400 font-bold text-xs rounded-md border border-emerald-500/30 flex items-center justify-center gap-1.5 cursor-not-allowed"
+                >
+                  <Check className="w-4 h-4" /> Đã sở hữu trọn bộ
+                </button>
+              ) : isActive ? (
+                <button 
+                  disabled 
+                  className="w-full py-2 bg-emerald-600/20 text-emerald-400 font-bold text-xs rounded-md border border-emerald-500/30 flex items-center justify-center gap-1.5"
+                >
+                  <Check className="w-4 h-4" /> Đang trang bị
+                </button>
+              ) : (
+                <button 
+                  onClick={() => handleAction()}
+                  className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white font-bold text-xs rounded-md transition-all cursor-pointer shadow-md"
+                >
+                  Trang bị {isNameplate ? 'bảng tên' : 'khung'}
+                </button>
+              )}
+            </div>
           ) : (
-            <button 
-              onClick={handleAction}
-              disabled={frame.isPremium && !user.isPremium}
-              className={`w-full py-2 font-bold text-xs rounded-md transition-all flex items-center justify-center gap-1 cursor-pointer ${
-                frame.isPremium && !user.isPremium
-                  ? 'bg-zinc-800 text-zinc-500 border border-zinc-700 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-pink-500 to-indigo-600 hover:from-pink-600 hover:to-indigo-700 text-white shadow-md active:scale-[0.98]'
-              }`}
-            >
-              <ShoppingBag className="w-3.5 h-3.5" /> Mua ngay
-            </button>
+            <div className={`flex gap-2`}>
+              <button 
+                onClick={() => handleAction()}
+                className={`w-full py-2 font-bold text-xs rounded-md transition-all flex items-center justify-center gap-1 cursor-pointer bg-gradient-to-r from-pink-500 to-indigo-600 hover:from-pink-600 hover:to-indigo-700 text-white shadow-md active:scale-[0.98]`}
+              >
+                <ShoppingBag className="w-3.5 h-3.5" /> {frame.isPremium ? 'Nhận miễn phí' : (isCombo ? 'Mua trọn bộ' : 'Mua ngay')}
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -219,29 +340,54 @@ function FrameCard({ frame }) {
 
 export default function ShopPage() {
   useTitle('Cửa hàng');
-  const { user, products, categories, loading, fetchProducts, fetchCategories, fetchProfile, addCoins } = useUserStore();
+  const { user, products, premiumProducts, categories, loading, fetchProducts, fetchPremiumProducts, fetchCategories, fetchProfile, addCoins } = useUserStore();
   const [filter, setFilter] = useState('all');
-  const [activeCategory, setActiveCategory] = useState('all');
+  const [activeCategory, setActiveCategory] = useState(null);
+  const [inventoryItems, setInventoryItems] = useState([]);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
 
   // Load backend data on component mount
   useEffect(() => {
     fetchProfile();
     fetchCategories();
     fetchProducts();
+    fetchPremiumProducts();
+    
+    // Fetch inventory
+    const fetchInv = async () => {
+      const token = localStorage.getItem('token') || localStorage.getItem('admin_token');
+      if (!token) return;
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/shop/inventory`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const result = await res.json();
+        if (result.status === 'success') {
+          setInventoryItems(result.data || []);
+        }
+      } catch (e) {}
+    };
+    fetchInv();
   }, [fetchProfile, fetchProducts, fetchCategories]);
 
+  // Set default category to 'khung-vien' once categories are loaded
+  useEffect(() => {
+    if (categories.length > 0 && !activeCategory) {
+      const khungVienCat = categories.find(c => c.slug === 'khung-vien');
+      if (khungVienCat) {
+        setActiveCategory(khungVienCat._id);
+      } else {
+        setActiveCategory(categories[0]._id);
+      }
+    }
+  }, [categories, activeCategory]);
+
   // Fallback to static mock products if backend returns empty or is offline
-  const activeProducts = products.length > 0 ? products : fallbackMockFrames;
+  const activeProducts = filter === 'premium' ? premiumProducts : (products.length > 0 ? products : fallbackMockFrames);
 
   const filteredFrames = activeProducts.filter(frame => {
-    // Check type filter
-    if (filter === 'premium' && !frame.isPremium) return false;
-    if (filter === 'coin' && frame.isPremium) return false;
-    
     // Check category filter
-    if (activeCategory !== 'all') {
-      if (frame.category !== activeCategory) return false;
-    }
+    if (activeCategory && frame.category !== activeCategory) return false;
     
     return true;
   });
@@ -311,9 +457,9 @@ export default function ShopPage() {
                     : 'bg-[#2b2d31] text-[#949ba4] hover:bg-[#35373c] hover:text-[#dbdee1]'
                 }`}
               >
-                {type === 'all' && 'Tất cả loại'}
-                {type === 'premium' && 'Premium Chỉ Định'}
-                {type === 'coin' && 'Mua Bằng Coin'}
+                {type === 'all' && 'Tất cả (Coin)'}
+                {type === 'premium' && 'Phần thưởng Premium'}
+                {type === 'coin' && 'Bán Chạy'}
               </button>
             ))}
           </div>
@@ -329,16 +475,6 @@ export default function ShopPage() {
         {categories.length > 0 && (
           <div className="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar">
             <span className="text-xs font-bold text-[#949ba4] mr-1 shrink-0">Danh mục:</span>
-            <button
-              onClick={() => setActiveCategory('all')}
-              className={`px-3 py-1 text-xs font-semibold rounded-md whitespace-nowrap transition-all ${
-                activeCategory === 'all'
-                  ? 'bg-amber-500/20 text-amber-400 border border-amber-500/50'
-                  : 'bg-[#1e1f22] text-[#80848e] border border-[#2b2d31] hover:text-[#dbdee1] hover:border-[#35373c]'
-              }`}
-            >
-              Tất cả danh mục
-            </button>
             {categories.map(cat => (
               <button
                 key={cat._id}
@@ -360,10 +496,66 @@ export default function ShopPage() {
       <div className="flex-grow pr-1">
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
           {filteredFrames.map((frame) => (
-            <FrameCard key={frame.id} frame={frame} />
+            <FrameCard 
+              key={frame.id} 
+              frame={frame} 
+              inventoryItems={inventoryItems} 
+              onShowPremiumModal={() => setShowPremiumModal(true)}
+            />
           ))}
         </div>
       </div>
+
+      {/* Premium Upgrade Modal */}
+      {showPremiumModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-[#1e1f22] rounded-2xl border border-slate-700/50 w-full max-w-md overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200">
+            <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 p-6 flex flex-col items-center justify-center text-center">
+              <Award className="w-16 h-16 text-white mb-3 drop-shadow-md" />
+              <h3 className="text-2xl font-black text-white">Nâng cấp Premium!</h3>
+              <p className="text-pink-100 mt-2 text-sm">
+                Bạn cần trở thành hội viên Premium để nhận đặc quyền này.
+              </p>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 text-slate-300">
+                  <Check className="w-5 h-5 text-emerald-400 shrink-0" />
+                  <span className="text-sm">Nhận miễn phí các Avatar Frame giới hạn.</span>
+                </div>
+                <div className="flex items-center gap-3 text-slate-300">
+                  <Check className="w-5 h-5 text-emerald-400 shrink-0" />
+                  <span className="text-sm">Tên hiển thị độc quyền, màu sắc nổi bật.</span>
+                </div>
+                <div className="flex items-center gap-3 text-slate-300">
+                  <Check className="w-5 h-5 text-emerald-400 shrink-0" />
+                  <span className="text-sm">Ưu tiên hỗ trợ từ Admin hệ thống.</span>
+                </div>
+              </div>
+              
+              <div className="pt-4 flex gap-3">
+                <button 
+                  onClick={() => setShowPremiumModal(false)}
+                  className="flex-1 px-4 py-2.5 rounded-lg bg-[#2b2d31] hover:bg-[#35373c] text-white font-semibold transition-colors"
+                >
+                  Đóng
+                </button>
+                <button 
+                  onClick={() => {
+                    setShowPremiumModal(false);
+                    // Có thể navigate sang trang thanh toán nếu có
+                    alert('Chuyển hướng đến trang thanh toán...');
+                  }}
+                  className="flex-1 px-4 py-2.5 rounded-lg bg-gradient-to-r from-indigo-500 to-pink-500 hover:from-indigo-600 hover:to-pink-600 text-white font-bold transition-all shadow-md shadow-pink-500/20"
+                >
+                  Nâng Cấp Ngay
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

@@ -9,6 +9,7 @@ import {
 import productService from '../../services/admin/productService';
 import categoryService from '../../services/admin/categoryService';
 import Pagination from '../../components/Pagination';
+import ProductSelector from '../../components/admin/ProductSelector';
 
 // ─── Tree Category Picker ──────────────────────────────────────────────────
 function CategoryTreePicker({ treeData, selectedId, onSelect, placeholder = '— Không phân loại —' }) {
@@ -150,6 +151,7 @@ export default function ManageProducts() {
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null); // null = Create, string = Edit
   
   // Form State
@@ -161,6 +163,11 @@ export default function ManageProducts() {
   const [animatedImage, setAnimatedImage] = useState(null);
   const [staticPreview, setStaticPreview] = useState(null);
   const [animatedPreview, setAnimatedPreview] = useState(null);
+  
+  // Combo State
+  const [isCombo, setIsCombo] = useState(false);
+  const [comboItems, setComboItems] = useState([]);
+  const [isSelectorOpen, setIsSelectorOpen] = useState(false);
 
   // Bulk Actions
   const [selectedIds, setSelectedIds] = useState([]);
@@ -183,6 +190,14 @@ export default function ManageProducts() {
     }, 500);
     return () => clearTimeout(timeoutId);
   }, [localSearch]);
+
+  // Tự động tính tổng tiền khi thay đổi comboItems
+  useEffect(() => {
+    if (isCombo && comboItems.length > 0 && !editingId) {
+      const sum = comboItems.reduce((acc, curr) => acc + curr.price, 0);
+      setPrice(sum.toString());
+    }
+  }, [comboItems, isCombo]);
 
   const updateUrlParams = (updates) => {
     const newParams = new URLSearchParams(searchParams);
@@ -265,6 +280,25 @@ export default function ManageProducts() {
     setIsModalOpen(true);
   };
 
+  const findComboCategoryId = (categories) => {
+    for (const c of categories) {
+      if (c.slug === 'combo') return c._id;
+      if (c.children?.length) {
+        const found = findComboCategoryId(c.children);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+
+  const openCreateComboModal = () => {
+    resetForm();
+    const comboId = findComboCategoryId(categoryTree);
+    if (comboId) setCategoryId(comboId);
+    setIsCombo(true);
+    setIsModalOpen(true);
+  };
+
   const openEditModal = (product) => {
     setEditingId(product._id);
     setName(product.name);
@@ -275,6 +309,10 @@ export default function ManageProducts() {
     setAnimatedImage(null);
     setStaticPreview(product.staticUrl);
     setAnimatedPreview(product.animatedUrl);
+    
+    setIsCombo(product.isCombo || false);
+    setComboItems(product.comboItems || []);
+    
     setError(null);
     setMessage(null);
     setIsModalOpen(true);
@@ -295,6 +333,9 @@ export default function ManageProducts() {
     setAnimatedImage(null);
     setStaticPreview(null);
     setAnimatedPreview(null);
+    
+    setIsCombo(false);
+    setComboItems([]);
     setError(null);
     
     // Clear file inputs if any
@@ -322,12 +363,19 @@ export default function ManageProducts() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!editingId && (!name || price === '' || !staticImage || !animatedImage)) {
-      setError('Khi tạo mới, vui lòng nhập Tên, Giá và tải lên đủ 2 ảnh!');
+    let finalPrice = price;
+    if (isCombo && (!price || price === '' || Number(price) <= 0)) {
+      finalPrice = comboItems.reduce((acc, curr) => acc + (curr.price || 0), 0).toString();
+      setPrice(finalPrice);
+    }
+
+    if (!name || finalPrice === '' || Number(finalPrice) <= 0) {
+      setError('Vui lòng nhập Tên và Giá hợp lệ (phải lớn hơn 0)!');
       return;
     }
-    if (editingId && (!name || price === '')) {
-      setError('Vui lòng nhập Tên và Giá!');
+
+    if (!editingId && !isCombo && (!staticImage || !animatedImage)) {
+      setError('Khi tạo mới, vui lòng tải lên đủ 2 ảnh (nếu không phải Combo)!');
       return;
     }
 
@@ -338,9 +386,14 @@ export default function ManageProducts() {
 
       const formData = new FormData();
       formData.append('name', name);
-      formData.append('price', Number(price));
+      formData.append('price', Number(finalPrice));
       formData.append('isActive', isActive);
       if (categoryId) formData.append('category', categoryId);
+      
+      formData.append('isCombo', isCombo);
+      if (isCombo && comboItems.length > 0) {
+        formData.append('comboItems', JSON.stringify(comboItems.map(i => i._id)));
+      }
       
       if (staticImage) formData.append('staticImage', staticImage);
       if (animatedImage) formData.append('animatedImage', animatedImage);
@@ -377,13 +430,22 @@ export default function ManageProducts() {
           </h1>
           <p className="text-sm text-[#949ba4] mt-1">Tổng cộng {pagination.totalProducts} sản phẩm</p>
         </div>
-        <button
-          onClick={openCreateModal}
-          className="bg-amber-500 hover:bg-amber-600 text-slate-950 px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2 transition-colors shadow-lg"
-        >
-          <PlusCircle className="w-4 h-4" />
-          Thêm Sản Phẩm Mới
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={openCreateComboModal}
+            className="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2 transition-colors shadow-lg"
+          >
+            <PlusCircle className="w-4 h-4" />
+            Tạo Combo Sản Phẩm
+          </button>
+          <button
+            onClick={openCreateModal}
+            className="bg-amber-500 hover:bg-amber-600 text-slate-950 px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2 transition-colors shadow-lg"
+          >
+            <PlusCircle className="w-4 h-4" />
+            Thêm Sản Phẩm Mới
+          </button>
+        </div>
       </div>
 
       {message && (
@@ -525,17 +587,22 @@ export default function ManageProducts() {
                           <img
                             src={item.staticUrl}
                             alt="Static"
-                            className="w-full h-full object-cover transition-opacity duration-300 group-hover/img:opacity-0 absolute inset-0"
+                            className="w-full h-full object-cover absolute inset-0 group-hover/img:hidden"
                           />
                           <img
                             src={item.animatedUrl}
                             alt="Animated"
-                            className="w-full h-full object-cover opacity-0 group-hover/img:opacity-100 absolute inset-0 transition-opacity duration-300"
+                            className="w-full h-full object-cover absolute inset-0 hidden group-hover/img:block"
                           />
                         </div>
                       </td>
                       <td className="p-4">
-                        <p className="text-sm font-bold text-white mb-0.5">{item.name}</p>
+                        <p className="text-sm font-bold text-white mb-0.5">
+                          {item.name}
+                          {item.isCombo && (
+                            <span className="ml-2 text-[10px] bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded border border-indigo-500/30 uppercase tracking-wider font-extrabold">Combo ({item.comboItems?.length})</span>
+                          )}
+                        </p>
                         <p className="text-[10px] text-[#949ba4] font-mono">ID: {item._id}</p>
                       </td>
                       <td className="p-4">
@@ -548,15 +615,11 @@ export default function ManageProducts() {
                         )}
                       </td>
                       <td className="p-4">
-                        {item.price === 0 ? (
-                          <span className="text-xs bg-purple-500/10 text-purple-400 font-extrabold uppercase px-2 py-1 rounded border border-purple-500/20 inline-flex items-center gap-1">
-                            <Sparkles className="w-3 h-3" /> Free
-                          </span>
-                        ) : (
+                        <div className="flex flex-col gap-1 items-start">
                           <span className="text-sm font-extrabold text-amber-400 inline-flex items-center gap-1">
                             <Coins className="w-4 h-4" /> {item.price}
                           </span>
-                        )}
+                        </div>
                       </td>
                       <td className="p-4">
                         {item.isActive !== false ? (
@@ -636,12 +699,31 @@ export default function ManageProducts() {
 
                 <div className="flex gap-4">
                   <div className="space-y-1 flex-1">
-                    <label className="text-xs font-bold text-[#949ba4] uppercase">Giá (Coin) *</label>
+                    <label className="text-xs font-bold text-[#949ba4] uppercase flex items-center gap-2">
+                      Giá (Coin) *
+                      {isCombo && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (comboItems.length > 0) {
+                              const sum = comboItems.reduce((acc, curr) => acc + curr.price, 0);
+                              setPrice(sum.toString());
+                            }
+                          }}
+                          className="bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30 px-1.5 py-0.5 rounded text-[10px] font-bold transition-colors"
+                          title="Tính lại tổng giá các món"
+                        >
+                          Cộng lại
+                        </button>
+                      )}
+                    </label>
                     <input
                       type="number"
                       value={price}
                       onChange={(e) => setPrice(e.target.value)}
-                      placeholder="0 = Premium Free"
+                      placeholder="Ví dụ: 150"
+                      min="1"
+                      required
                       className="w-full bg-[#1e1f22] border border-[#1f2023] rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-indigo-500"
                     />
                   </div>
@@ -667,49 +749,92 @@ export default function ManageProducts() {
                   <CategoryTreePicker
                     treeData={categoryTree}
                     selectedId={categoryId}
-                    onSelect={setCategoryId}
+                    onSelect={(id) => {
+                      setCategoryId(id);
+                      const comboId = findComboCategoryId(categoryTree);
+                      if (comboId && id === comboId) {
+                        setIsCombo(true);
+                      } else if (!editingId) {
+                        setIsCombo(false);
+                      }
+                    }}
                   />
                 </div>
 
-                {/* Upload Static */}
-                <div className="space-y-2 pt-2 border-t border-[#1f2023]">
-                  <label className="text-xs font-bold text-[#949ba4] uppercase flex items-center gap-1">
-                    <ImageIcon className="w-3.5 h-3.5 text-emerald-400" />
-                    Ảnh Tĩnh (PNG/JPG) {editingId ? '(Tùy chọn)' : '*'}
-                  </label>
-                  <div className="flex items-center gap-3">
-                    <label className="flex-1 flex flex-col items-center justify-center p-3 border-2 border-dashed border-[#35373c] hover:border-indigo-500 rounded-lg cursor-pointer bg-[#1e1f22] transition-colors">
-                      <UploadCloud className="w-5 h-5 text-[#949ba4] mb-1" />
-                      <span className="text-xs text-[#949ba4] font-semibold text-center">Tải lên ảnh tĩnh</span>
-                      <input type="file" accept="image/png, image/jpeg, image/webp" className="hidden" onChange={handleStaticImageChange} />
-                    </label>
-                    {staticPreview && (
-                      <div className="w-16 h-16 rounded-lg border border-[#35373c] overflow-hidden shrink-0 bg-black/50 flex items-center justify-center p-1">
-                        <img src={staticPreview} alt="Static" className="max-w-full max-h-full object-contain" />
+                {/* Phân vùng Combo */}
+                {isCombo && (
+                  <div className="space-y-2 p-3 bg-indigo-500/5 border border-indigo-500/20 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-indigo-400 uppercase">Danh sách sản phẩm trong Combo</label>
+                      <button
+                        type="button"
+                        onClick={() => setIsSelectorOpen(true)}
+                        className="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-2 py-1 rounded font-semibold transition-colors"
+                      >
+                        {comboItems.length > 0 ? 'Sửa danh sách' : 'Chọn sản phẩm'}
+                      </button>
+                    </div>
+                    {comboItems.length === 0 ? (
+                      <p className="text-xs text-[#949ba4] italic">Chưa chọn sản phẩm nào.</p>
+                    ) : (
+                      <div className="space-y-1 mt-2">
+                        {comboItems.map((item, idx) => (
+                          <div key={item._id} className="flex items-center justify-between bg-[#1e1f22] border border-[#1f2023] rounded p-2 text-xs">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[#949ba4] font-mono">{idx + 1}.</span>
+                              <span className="text-white font-semibold">{item.name}</span>
+                            </div>
+                            <span className="text-amber-400 font-bold">{item.price} Coin</span>
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>
-                </div>
+                )}
 
-                {/* Upload Animated */}
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-[#949ba4] uppercase flex items-center gap-1">
-                    <FileVideo className="w-3.5 h-3.5 text-rose-400" />
-                    Ảnh Động (GIF/APNG) {editingId ? '(Tùy chọn)' : '*'}
-                  </label>
-                  <div className="flex items-center gap-3">
-                    <label className="flex-1 flex flex-col items-center justify-center p-3 border-2 border-dashed border-[#35373c] hover:border-indigo-500 rounded-lg cursor-pointer bg-[#1e1f22] transition-colors">
-                      <UploadCloud className="w-5 h-5 text-[#949ba4] mb-1" />
-                      <span className="text-xs text-[#949ba4] font-semibold text-center">Tải lên ảnh động</span>
-                      <input type="file" accept="image/gif, image/webp, image/png, image/apng" className="hidden" onChange={handleAnimatedImageChange} />
-                    </label>
-                    {animatedPreview && (
-                      <div className="w-16 h-16 rounded-lg border border-[#35373c] overflow-hidden shrink-0 bg-black/50 flex items-center justify-center p-1">
-                        <img src={animatedPreview} alt="Animated" className="max-w-full max-h-full object-contain" />
+                {!isCombo && (
+                  <>
+                    {/* Upload Static */}
+                    <div className="space-y-2 pt-2 border-t border-[#1f2023]">
+                      <label className="text-xs font-bold text-[#949ba4] uppercase flex items-center gap-1">
+                        <ImageIcon className="w-3.5 h-3.5 text-emerald-400" />
+                        Ảnh Tĩnh (PNG/JPG) {editingId ? '(Tùy chọn)' : '*'}
+                      </label>
+                      <div className="flex items-center gap-3">
+                        <label className="flex-1 flex flex-col items-center justify-center p-3 border-2 border-dashed border-[#35373c] hover:border-indigo-500 rounded-lg cursor-pointer bg-[#1e1f22] transition-colors">
+                          <UploadCloud className="w-5 h-5 text-[#949ba4] mb-1" />
+                          <span className="text-xs text-[#949ba4] font-semibold text-center">Tải lên ảnh tĩnh</span>
+                          <input type="file" accept="image/png, image/jpeg, image/webp" className="hidden" onChange={handleStaticImageChange} />
+                        </label>
+                        {staticPreview && (
+                          <div className="w-16 h-16 rounded-lg border border-[#35373c] overflow-hidden shrink-0 bg-black/50 flex items-center justify-center p-1">
+                            <img src={staticPreview} alt="Static" className="max-w-full max-h-full object-contain" />
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                </div>
+                    </div>
+
+                    {/* Upload Animated */}
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-[#949ba4] uppercase flex items-center gap-1">
+                        <FileVideo className="w-3.5 h-3.5 text-rose-400" />
+                        Ảnh Động (GIF/APNG) {editingId ? '(Tùy chọn)' : '*'}
+                      </label>
+                      <div className="flex items-center gap-3">
+                        <label className="flex-1 flex flex-col items-center justify-center p-3 border-2 border-dashed border-[#35373c] hover:border-indigo-500 rounded-lg cursor-pointer bg-[#1e1f22] transition-colors">
+                          <UploadCloud className="w-5 h-5 text-[#949ba4] mb-1" />
+                          <span className="text-xs text-[#949ba4] font-semibold text-center">Tải lên ảnh động</span>
+                          <input type="file" accept="image/gif, image/webp, image/png, image/apng" className="hidden" onChange={handleAnimatedImageChange} />
+                        </label>
+                        {animatedPreview && (
+                          <div className="w-16 h-16 rounded-lg border border-[#35373c] overflow-hidden shrink-0 bg-black/50 flex items-center justify-center p-1">
+                            <img src={animatedPreview} alt="Animated" className="max-w-full max-h-full object-contain" />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
               </form>
             </div>
 
@@ -735,6 +860,23 @@ export default function ManageProducts() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ─── Combo Product Selector ───────────────────────────────────────────── */}
+      {isSelectorOpen && (
+        <ProductSelector 
+          categoryTree={categoryTree}
+          selectedItems={comboItems}
+          excludeCombo={true}
+          onSelect={(items) => {
+            setComboItems(items);
+            if (isCombo && items.length > 0) {
+              const sum = items.reduce((acc, curr) => acc + curr.price, 0);
+              setPrice(sum.toString());
+            }
+          }}
+          onClose={() => setIsSelectorOpen(false)}
+        />
       )}
     </div>
   );

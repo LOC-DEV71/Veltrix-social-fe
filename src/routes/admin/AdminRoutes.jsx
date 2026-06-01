@@ -14,6 +14,7 @@ import ManageAccounts from '../../pages/admin/ManageAccounts';
 import ManageRoles from '../../pages/admin/ManageRoles';
 import ManagePermissions from '../../pages/admin/ManagePermissions';
 import ManageCategories from '../../pages/admin/ManageCategories';
+import ManagePremiumProducts from '../../pages/admin/ManagePremiumProducts';
 
 export const AdminRoutes = (
   <Route path="admin">
@@ -48,6 +49,9 @@ export const AdminRoutes = (
       
       {/* /admin/categories -> Hierarchical product categories */}
       <Route path="categories" element={<ManageCategories />} />
+
+      {/* /admin/premium-products -> Premium product perks */}
+      <Route path="premium-products" element={<ManagePremiumProducts />} />
     </Route>
   </Route>
 );

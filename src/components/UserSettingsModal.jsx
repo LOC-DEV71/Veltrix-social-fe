@@ -122,12 +122,12 @@ export default function UserSettingsModal({ isOpen, onClose, initialTab = 'accou
         if (res.data?.status === 'success') {
           const frames = res.data.data
             .filter(item => item.categorySlug === 'khung-vien' || item.category?.slug === 'khung-vien')
-            .map(item => item.product);
+            .map(item => ({ ...item.product, expiresAt: item.expiresAt, isPremiumPerk: item.isPremiumPerk }));
           setAvailableFrames(frames);
 
           const nameplates = res.data.data
             .filter(item => item.categorySlug === 'bang-ten' || item.category?.slug === 'bang-ten')
-            .map(item => item.product);
+            .map(item => ({ ...item.product, expiresAt: item.expiresAt, isPremiumPerk: item.isPremiumPerk }));
           setAvailableNameplates(nameplates);
         }
       } catch (e) {
@@ -138,6 +138,21 @@ export default function UserSettingsModal({ isOpen, onClose, initialTab = 'accou
   }, []);
 
   if (!isOpen || !user) return null;
+
+  const getRemainingTime = (expiresAt, isPremiumPerk) => {
+    if (!expiresAt) {
+      if (isPremiumPerk) return 'Theo gói Premium';
+      return null;
+    }
+    const diff = new Date(expiresAt) - new Date();
+    if (diff <= 0) return 'Đã hết hạn';
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    if (days > 0) return `Còn ${days} ngày`;
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    if (hours > 0) return `Còn ${hours} giờ`;
+    const minutes = Math.floor(diff / (1000 * 60));
+    return `Còn ${minutes} phút`;
+  };
 
   const handleSaveProfile = async () => {
     if (activeTab === 'profile' && profileTab === 'server') {
@@ -1185,6 +1200,11 @@ export default function UserSettingsModal({ isOpen, onClose, initialTab = 'accou
                           setIsDecorationModalOpen(false); 
                         }}>
                         <img src={frame.animatedUrl} className="w-[120px] h-[120px] absolute max-w-none pointer-events-none" alt={frame.name} />
+                        {(frame.expiresAt || frame.isPremiumPerk) && (
+                          <div className="absolute -bottom-2 px-2 py-0.5 bg-pink-500/90 text-white text-[9px] font-bold rounded-full shadow-lg whitespace-nowrap z-10 border border-pink-400">
+                            {getRemainingTime(frame.expiresAt, frame.isPremiumPerk)}
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -1226,7 +1246,7 @@ export default function UserSettingsModal({ isOpen, onClose, initialTab = 'accou
                         }}>
                         <div className="absolute inset-0 z-0 pointer-events-none">
                           <div className="absolute inset-0 opacity-80 mix-blend-screen">
-                            <img src={nameplate.animatedUrl} className="absolute inset-0 w-full h-full object-cover object-left opacity-70 group-hover:opacity-100 transition-opacity" alt={nameplate.name} />
+                            <img src={nameplate.animatedUrl} className="absolute inset-0 w-full h-full object-cover object-left opacity-70 hidden group-hover:block" alt={nameplate.name} />
                           </div>
                           <div 
                             className="absolute inset-0 z-10 mix-blend-overlay"
@@ -1234,7 +1254,12 @@ export default function UserSettingsModal({ isOpen, onClose, initialTab = 'accou
                           />
                         </div>
                         <img src={avatarPreview} className="w-8 h-8 rounded-full object-cover relative z-10 mr-3 shadow-md" alt="Avatar" />
-                        <span className="text-[#f2f3f5] font-semibold text-[15px] relative z-10 drop-shadow-md">{displayName}</span>
+                        <span className="text-[#f2f3f5] font-semibold text-[15px] relative z-10 drop-shadow-md flex-1">{displayName}</span>
+                        {(nameplate.expiresAt || nameplate.isPremiumPerk) && (
+                          <div className="relative z-10 px-2 py-0.5 bg-pink-500/90 text-white text-[9px] font-bold rounded-full shadow-lg whitespace-nowrap border border-pink-400 ml-auto">
+                            {getRemainingTime(nameplate.expiresAt, nameplate.isPremiumPerk)}
+                          </div>
+                        )}
                       </div>
                     );
                   })}

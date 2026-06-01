@@ -29,6 +29,27 @@ const productService = {
   bulkAction: async (ids, action) => {
     const res = await axiosClient.put('/api/admin/products/bulk', { ids, action });
     return res.data;
+  },
+
+  // POST /api/admin/premium-products
+  setupPremium: async (data) => {
+    const res = await axiosClient.post('/api/admin/premium-products', data);
+    return res.data;
+  },
+
+  getPremiumList: async (params = {}) => {
+    const res = await axiosClient.get('/api/admin/premium-products', { params });
+    return res.data;
+  },
+
+  deletePremium: async (id) => {
+    const res = await axiosClient.delete(`/api/admin/premium-products/${id}`);
+    return res.data;
+  },
+
+  bulkActionPremium: async (ids, action) => {
+    const res = await axiosClient.put('/api/admin/premium-products/bulk', { ids, action });
+    return res.data;
   }
 };
 

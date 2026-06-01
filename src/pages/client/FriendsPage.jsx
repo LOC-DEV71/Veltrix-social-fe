@@ -178,8 +178,8 @@ export default function FriendsPage() {
         {(friend.activeNameplateStaticUrl || friend.activeNameplateAnimatedUrl) && (
           <div className="absolute inset-0 z-0 pointer-events-none">
             <div className="absolute inset-0 opacity-80 mix-blend-screen">
-              <img src={friend.activeNameplateStaticUrl || friend.activeNameplateAnimatedUrl} className="absolute inset-0 w-full h-full object-cover object-left group-hover:opacity-0 transition-opacity" alt="Nameplate static" />
-              <img src={friend.activeNameplateAnimatedUrl} className="absolute inset-0 w-full h-full object-cover object-left opacity-0 group-hover:opacity-100 transition-opacity" alt="Nameplate animated" />
+              <img src={friend.activeNameplateStaticUrl || friend.activeNameplateAnimatedUrl} className="absolute inset-0 w-full h-full object-cover object-left group-hover:hidden" alt="Nameplate static" />
+              <img src={friend.activeNameplateAnimatedUrl} className="absolute inset-0 w-full h-full object-cover object-left hidden group-hover:block" alt="Nameplate animated" />
             </div>
             {/* Gradient Overlay */}
             <div 
@@ -208,14 +208,14 @@ export default function FriendsPage() {
                   {staticUrl && (
                     <img 
                       src={staticUrl} 
-                      className={`w-full h-full object-contain pointer-events-none ${animatedUrl ? 'group-hover:opacity-0 transition-opacity' : ''}`} 
+                      className={`w-full h-full object-contain pointer-events-none ${animatedUrl ? 'group-hover:hidden' : ''}`} 
                       alt="static frame" 
                     />
                   )}
                   {animatedUrl && (
                     <img 
                       src={animatedUrl} 
-                      className={`w-full h-full object-contain pointer-events-none ${staticUrl ? 'absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity' : ''}`} 
+                      className={`w-full h-full object-contain pointer-events-none ${staticUrl ? 'absolute inset-0 hidden group-hover:block' : ''}`} 
                       alt="animated frame" 
                     />
                   )}
