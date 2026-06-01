@@ -48,6 +48,9 @@ export default function LoginPage() {
       }
     } catch (err) {
       if (err.response?.status === 403 && err.response?.data?.isBanned) {
+        localStorage.setItem('isBanned', 'true');
+        localStorage.setItem('banReason', err.response.data.message || err.response.data.reason || 'Vi phạm chính sách hệ thống');
+        localStorage.setItem('banType', err.response.data.banType || 'both');
         navigate('/banned');
         return;
       }

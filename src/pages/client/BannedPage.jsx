@@ -10,34 +10,32 @@ export default function BannedPage() {
   const [banType, setBanType] = useState('both');
 
   useEffect(() => {
-    // Read cookies
-    const getCookie = (name) => {
-      const value = `; ${document.cookie}`;
-      const parts = value.split(`; ${name}=`);
-      if (parts.length === 2) return parts.pop().split(';').shift();
-      return null;
-    };
-
-    const isBanned = getCookie('isBanned');
+    const isBanned = localStorage.getItem('isBanned');
     
-    // If not actually banned (no cookie), send them home
+    // If not actually banned (no localStorage flag), send them home
     if (isBanned !== 'true') {
       navigate('/');
       return;
     }
 
-    const reasonCookie = getCookie('banReason');
-    const typeCookie = getCookie('banType');
+    const reason = localStorage.getItem('banReason');
+    const type = localStorage.getItem('banType');
 
-    if (reasonCookie) setBanReason(decodeURIComponent(reasonCookie));
-    if (typeCookie) setBanType(typeCookie);
+    if (reason) setBanReason(reason);
+    if (type) setBanType(type);
   }, [navigate]);
 
   const handleReturnToLogin = () => {
-    // Clear cookies so they can attempt to login again
+    // Clear localStorage so they can attempt to login again
+    localStorage.removeItem('isBanned');
+    localStorage.removeItem('banReason');
+    localStorage.removeItem('banType');
+    
+    // Also clear cookies just in case they were set by the backend directly
     document.cookie = "isBanned=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     document.cookie = "banReason=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     document.cookie = "banType=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    
     navigate('/login');
   };
 
