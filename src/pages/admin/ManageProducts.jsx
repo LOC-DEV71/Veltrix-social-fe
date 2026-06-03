@@ -168,6 +168,10 @@ export default function ManageProducts() {
   const [isCombo, setIsCombo] = useState(false);
   const [comboItems, setComboItems] = useState([]);
   const [isSelectorOpen, setIsSelectorOpen] = useState(false);
+  
+  // Effect Layers State (for hieu-ung-ho-so category)
+  const [effectLayerFiles, setEffectLayerFiles] = useState([]);
+  const [effectLayerPreviews, setEffectLayerPreviews] = useState([]);
 
   // Bulk Actions
   const [selectedIds, setSelectedIds] = useState([]);
@@ -291,6 +295,19 @@ export default function ManageProducts() {
     return null;
   };
 
+  const findCategorySlug = (categories, id) => {
+    for (const c of categories) {
+      if (c._id === id) return c.slug;
+      if (c.children?.length) {
+        const found = findCategorySlug(c.children, id);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+
+  const isProfileEffectCategory = categoryId && findCategorySlug(categoryTree, categoryId) === 'hieu-ung-ho-so';
+
   const openCreateComboModal = () => {
     resetForm();
     const comboId = findComboCategoryId(categoryTree);
@@ -312,6 +329,9 @@ export default function ManageProducts() {
     
     setIsCombo(product.isCombo || false);
     setComboItems(product.comboItems || []);
+    
+    setEffectLayerFiles([]);
+    setEffectLayerPreviews(product.effectLayers || []);
     
     setError(null);
     setMessage(null);
@@ -336,6 +356,10 @@ export default function ManageProducts() {
     
     setIsCombo(false);
     setComboItems([]);
+    
+    setEffectLayerFiles([]);
+    setEffectLayerPreviews([]);
+    
     setError(null);
     
     // Clear file inputs if any
@@ -374,9 +398,18 @@ export default function ManageProducts() {
       return;
     }
 
-    if (!editingId && !isCombo && (!staticImage || !animatedImage)) {
-      setError('Khi tạo mới, vui lòng tải lên đủ 2 ảnh (nếu không phải Combo)!');
-      return;
+    if (!editingId && !isCombo) {
+      if (isProfileEffectCategory) {
+        if (!staticImage || effectLayerFiles.length === 0) {
+          setError('Khi tạo mới hiệu ứng hồ sơ, vui lòng tải lên ảnh tĩnh và ít nhất 1 lớp hiệu ứng!');
+          return;
+        }
+      } else {
+        if (!staticImage || !animatedImage) {
+          setError('Khi tạo mới, vui lòng tải lên đủ 2 ảnh tĩnh và động!');
+          return;
+        }
+      }
     }
 
     try {
@@ -397,6 +430,11 @@ export default function ManageProducts() {
       
       if (staticImage) formData.append('staticImage', staticImage);
       if (animatedImage) formData.append('animatedImage', animatedImage);
+      
+      // Append effect layers
+      effectLayerFiles.forEach(file => {
+        formData.append('effectLayers', file);
+      });
 
       let result;
       if (editingId) {
@@ -815,7 +853,8 @@ export default function ManageProducts() {
                     </div>
 
                     {/* Upload Animated */}
-                    <div className="space-y-2">
+                    {!isProfileEffectCategory && (
+                      <div className="space-y-2">
                       <label className="text-xs font-bold text-[#949ba4] uppercase flex items-center gap-1">
                         <FileVideo className="w-3.5 h-3.5 text-rose-400" />
                         Ảnh Động (GIF/APNG) {editingId ? '(Tùy chọn)' : '*'}
@@ -833,7 +872,51 @@ export default function ManageProducts() {
                         )}
                       </div>
                     </div>
+                    )}
                   </>
+                )}
+
+                {/* Effect Layers for hieu-ung-ho-so */}
+                {isProfileEffectCategory && !isCombo && (
+                  <div className="space-y-2 pt-2 border-t border-[#1f2023]">
+                    <label className="text-xs font-bold text-purple-400 uppercase flex items-center gap-1">
+                      <FileVideo className="w-3.5 h-3.5" />
+                      Các lớp hiệu ứng (GIF/APNG) — Tối đa 5
+                    </label>
+                    <p className="text-[10px] text-[#949ba4]">Mỗi lớp sẽ được xếp chồng lên nhau để tạo hiệu ứng hồ sơ. Lớp đầu tiên ở dưới cùng.</p>
+                    <div className="flex flex-wrap gap-2">
+                      {effectLayerPreviews.map((preview, idx) => (
+                        <div key={idx} className="relative w-20 h-20 rounded-lg border border-[#35373c] overflow-hidden bg-black/50 group">
+                          <img src={preview} alt={`Layer ${idx + 1}`} className="w-full h-full object-contain" />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEffectLayerPreviews(prev => prev.filter((_, i) => i !== idx));
+                              setEffectLayerFiles(prev => prev.filter((_, i) => i !== idx));
+                            }}
+                            className="absolute top-0.5 right-0.5 bg-rose-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                          <span className="absolute bottom-0.5 left-0.5 text-[9px] bg-black/70 text-white px-1 rounded">#{idx + 1}</span>
+                        </div>
+                      ))}
+                      {effectLayerPreviews.length < 5 && (
+                        <label className="w-20 h-20 flex flex-col items-center justify-center border-2 border-dashed border-[#35373c] hover:border-purple-500 rounded-lg cursor-pointer bg-[#1e1f22] transition-colors">
+                          <UploadCloud className="w-5 h-5 text-[#949ba4] mb-1" />
+                          <span className="text-[9px] text-[#949ba4] font-semibold">Thêm lớp</span>
+                          <input type="file" accept="image/gif, image/png, image/apng, image/webp" className="hidden" onChange={(e) => {
+                            const file = e.target.files[0];
+                            if (file) {
+                              setEffectLayerFiles(prev => [...prev, file]);
+                              setEffectLayerPreviews(prev => [...prev, URL.createObjectURL(file)]);
+                            }
+                            e.target.value = '';
+                          }} />
+                        </label>
+                      )}
+                    </div>
+                  </div>
                 )}
               </form>
             </div>

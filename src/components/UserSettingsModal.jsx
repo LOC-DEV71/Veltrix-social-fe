@@ -7,6 +7,7 @@ import axiosClient from '../services/axiosClient';
 import { logout as reduxLogout } from '../redux/slices/authSlice';
 import CustomStatusModal from './CustomStatusModal';
 import LoopingAPNG from './LoopingAPNG';
+import SequentialAPNGLayers from './SequentialAPNGLayers';
 
 export default function UserSettingsModal({ isOpen, onClose, initialTab = 'account', myCommunities = [], selectedCommunity = null }) {
   const user = useSelector((state) => state.auth.user);
@@ -347,6 +348,7 @@ export default function UserSettingsModal({ isOpen, onClose, initialTab = 'accou
 
   const handleLogout = async () => {
     try {
+      localStorage.removeItem('token');
       await axiosClient.post('/api/auth/logout');
     } catch (e) { /* ignore */ }
     dispatch(reduxLogout());
@@ -789,9 +791,15 @@ export default function UserSettingsModal({ isOpen, onClose, initialTab = 'accou
                       )}
                       
                       {activeProfileEffect && (
-                        <div className="absolute inset-0 z-[100] pointer-events-none overflow-hidden rounded-[6px]">
-                           <LoopingAPNG src={activeProfileEffect.animatedUrl || activeProfileEffect.staticUrl} className="w-full h-full object-fill opacity-90" alt="Profile Effect" duration={3000} />
-                        </div>
+                        activeProfileEffect.effectLayers?.length > 0 ? (
+                          <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-[6px] z-[100]">
+                            <SequentialAPNGLayers layers={activeProfileEffect.effectLayers} durationPerLayer={3000} />
+                          </div>
+                        ) : (
+                          <div className="absolute inset-0 z-[100] pointer-events-none overflow-hidden rounded-[6px]">
+                             <LoopingAPNG src={activeProfileEffect.animatedUrl || activeProfileEffect.staticUrl} className="w-full h-full object-fill opacity-90" alt="Profile Effect" duration={3000} />
+                          </div>
+                        )
                       )}
                       
                       <div 

@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import axiosClient from '../services/axiosClient';
 
 const BACKEND_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api`;
 
@@ -18,30 +19,11 @@ export const useUserStore = create((set, get) => ({
   categories: [],
   loading: false,
 
-  // Fetch user profile from backend (supports real login token or transparent dev helper fallback)
+  // Fetch user profile from backend
   fetchProfile: async () => {
     try {
-      let token = localStorage.getItem('token') || localStorage.getItem('admin_token');
-      
-      // Dev helper: If no token exists at all, seed the transparent dev login token
-      if (!token) {
-        const loginRes = await fetch(`${BACKEND_URL}/users/login`, { method: 'POST' });
-        const loginResult = await loginRes.json();
-        if (loginResult.status === 'success' && loginResult.token) {
-          token = loginResult.token;
-          localStorage.setItem('admin_token', token);
-          localStorage.setItem('token', token);
-          console.log('🔑 Transparently seeded dev JWT Authentication Token!');
-        }
-      }
-
-      const headers = {};
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-
-      const res = await fetch(`${BACKEND_URL}/users/profile`, { headers });
-      const result = await res.json();
+      const res = await axiosClient.get(`/api/users/profile`);
+      const result = res.data;
       
       if (result.status === 'success' && result.data) {
         const u = result.data;
@@ -51,7 +33,10 @@ export const useUserStore = create((set, get) => ({
             ownedFrames: u.ownedFrames?.map(f => typeof f === 'object' ? f._id : f) || [],
             activeFrame: typeof u.activeFrame === 'object' && u.activeFrame ? u.activeFrame._id : u.activeFrame || 'default',
             ownedNameplates: u.ownedNameplates?.map(f => typeof f === 'object' ? f._id : f) || [],
-            activeNameplate: typeof u.activeNameplate === 'object' && u.activeNameplate ? u.activeNameplate._id : u.activeNameplate || null
+            activeNameplate: typeof u.activeNameplate === 'object' && u.activeNameplate ? u.activeNameplate._id : u.activeNameplate || null,
+            ownedProfileEffects: u.ownedProfileEffects?.map(f => typeof f === 'object' ? f._id : f) || [],
+            activeProfileEffect: typeof u.activeProfileEffect === 'object' && u.activeProfileEffect ? u.activeProfileEffect._id : u.activeProfileEffect || null,
+            activeProfileEffectLayers: u.activeProfileEffectLayers || []
           }
         });
       }
@@ -272,7 +257,10 @@ export const useUserStore = create((set, get) => ({
             ownedFrames: u.ownedFrames?.map(f => typeof f === 'object' ? f._id : f) || [],
             activeFrame: typeof u.activeFrame === 'object' && u.activeFrame ? u.activeFrame._id : u.activeFrame || 'default',
             ownedNameplates: u.ownedNameplates?.map(f => typeof f === 'object' ? f._id : f) || [],
-            activeNameplate: typeof u.activeNameplate === 'object' && u.activeNameplate ? u.activeNameplate._id : u.activeNameplate || null
+            activeNameplate: typeof u.activeNameplate === 'object' && u.activeNameplate ? u.activeNameplate._id : u.activeNameplate || null,
+            ownedProfileEffects: u.ownedProfileEffects?.map(f => typeof f === 'object' ? f._id : f) || [],
+            activeProfileEffect: typeof u.activeProfileEffect === 'object' && u.activeProfileEffect ? u.activeProfileEffect._id : u.activeProfileEffect || null,
+            activeProfileEffectLayers: u.activeProfileEffectLayers || []
           }
         });
         return { success: true, message: result.message };

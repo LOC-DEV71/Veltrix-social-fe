@@ -3,6 +3,7 @@ import { X, UserPlus, MessageCircle, MoreHorizontal } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import axiosClient from '../services/axiosClient';
 import LoopingAPNG from './LoopingAPNG';
+import SequentialAPNGLayers from './SequentialAPNGLayers';
 
 export default function FullProfileModal({ isOpen, onClose, member, myCommunities = [], onSelectCommunity }) {
   const currentUser = useSelector(state => state.auth.user);
@@ -73,6 +74,7 @@ export default function FullProfileModal({ isOpen, onClose, member, myCommunitie
 
   const bgImagePlaceholder = bannerImage || member.user?.bannerImage; // Strictly bannerImage
   const profileEffectUrl = member.activeProfileEffectAnimatedUrl || member.user?.activeProfileEffectAnimatedUrl;
+  const profileEffectLayers = member.activeProfileEffectLayers || member.user?.activeProfileEffectLayers || [];
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/70 animate-in fade-in duration-200" onClick={onClose}>
@@ -116,12 +118,14 @@ export default function FullProfileModal({ isOpen, onClose, member, myCommunitie
           
           {/* Left Column (Profile Card) */}
           <div className="w-[390px] shrink-0 flex flex-col relative rounded-2xl bg-black/20 overflow-hidden border border-white/5 shadow-md">
-            {/* Profile Effect Overlay */}
-            {profileEffectUrl && (
+            {/* Profile Effect Overlay - Sequential multi-layer or single */}
+            {profileEffectLayers.length > 0 ? (
+              <SequentialAPNGLayers layers={profileEffectLayers} durationPerLayer={3000} />
+            ) : profileEffectUrl ? (
                <div className="absolute inset-0 z-[100] pointer-events-none">
                   <LoopingAPNG src={profileEffectUrl} alt="Profile Effect" className="w-full h-full object-fill opacity-90" duration={3000} />
                </div>
-            )}
+            ) : null}
             
             <div 
               className={`h-[150px] w-full shrink-0 ${bannerImage ? 'bg-cover bg-center' : ''}`} 

@@ -9,33 +9,8 @@ export default function LoopingAPNG({ src, alt = '', className = '', duration = 
   const imgRef = useRef(null);
   const timerRef = useRef(null);
 
-  const resetAnimation = useCallback(() => {
-    if (imgRef.current && src) {
-      // Force browser to reload the APNG by briefly clearing src then restoring with cache buster
-      const separator = src.includes('?') ? '&' : '?';
-      imgRef.current.src = '';
-      // Use requestAnimationFrame to ensure the browser processes the empty src
-      requestAnimationFrame(() => {
-        if (imgRef.current) {
-          imgRef.current.src = src + separator + '_t=' + Date.now();
-        }
-      });
-    }
-  }, [src]);
-
-  useEffect(() => {
-    if (!src) return;
-
-    // Set up the loop timer
-    timerRef.current = setInterval(resetAnimation, duration);
-
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-    };
-  }, [src, duration, resetAnimation]);
-
+  // Most APNGs loop natively. 
+  // We remove the cache-buster hack because it forces massive re-downloads for heavy files (like 12MB).
   if (!src) return null;
 
   return (

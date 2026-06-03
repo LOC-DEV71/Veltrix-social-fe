@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useUserStore } from '../../store/useUserStore';
 import { Sparkles, Coins, ShoppingBag, Check, ShieldAlert, Award, Plus, Loader2 } from 'lucide-react';
 import { useTitle } from '../../hooks/useTitle';
+import axiosClient from '../../services/axiosClient';
 
 const fallbackMockFrames = [
   {
@@ -52,10 +53,12 @@ function FrameCard({ frame, inventoryItems, onShowPremiumModal }) {
   const [purchaseStatus, setPurchaseStatus] = useState({ show: false, success: false, message: '' });
 
   const isNameplate = frame.category?.slug === 'bang-ten' || frame.categorySlug === 'bang-ten';
+  const isProfileEffect = frame.category?.slug === 'hieu-ung-ho-so' || frame.categorySlug === 'hieu-ung-ho-so';
   const isCombo = frame.category?.slug === 'combo' || frame.categorySlug === 'combo' || frame.isCombo;
   
   const frameItem = isCombo && frame.comboItems ? frame.comboItems.find(item => item.category?.slug === 'khung-vien') : null;
   const nameplateItem = isCombo && frame.comboItems ? frame.comboItems.find(item => item.category?.slug === 'bang-ten') : null;
+  const profileEffectItem = isCombo && frame.comboItems ? frame.comboItems.find(item => item.category?.slug === 'hieu-ung-ho-so') : null;
   
   let effectivePrice = frame.price;
   let isFullyOwnedCombo = false;
@@ -68,9 +71,11 @@ function FrameCard({ frame, inventoryItems, onShowPremiumModal }) {
       const catSlug = item.category?.slug;
       const isItemFrame = catSlug === 'khung-vien';
       const isItemNameplate = catSlug === 'bang-ten';
+      const isItemProfileEffect = catSlug === 'hieu-ung-ho-so';
       let alreadyOwned = false;
       if (isItemFrame && user.ownedFrames?.includes(item._id)) alreadyOwned = true;
       if (isItemNameplate && user.ownedNameplates?.includes(item._id)) alreadyOwned = true;
+      if (isItemProfileEffect && user.ownedProfileEffects?.includes(item._id)) alreadyOwned = true;
       
       if (alreadyOwned) {
         discount += item.price || 0;
@@ -83,13 +88,19 @@ function FrameCard({ frame, inventoryItems, onShowPremiumModal }) {
     }
   }
 
-  const isOwned = isCombo ? isFullyOwnedCombo : (isNameplate 
-    ? (user.ownedNameplates?.includes(frame.id) || user.ownedFrames?.includes(frame.id)) 
-    : user.ownedFrames?.includes(frame.id));
+  const isOwned = isCombo ? isFullyOwnedCombo : (
+    isProfileEffect ? user.ownedProfileEffects?.includes(frame.id) : (
+      isNameplate ? (user.ownedNameplates?.includes(frame.id) || user.ownedFrames?.includes(frame.id)) 
+      : user.ownedFrames?.includes(frame.id)
+    )
+  );
     
-  const isActive = isCombo ? false : (isNameplate 
-    ? (user.activeNameplate === frame.id || user.activeFrame === frame.id) 
-    : user.activeFrame === frame.id);
+  const isActive = isCombo ? false : (
+    isProfileEffect ? user.activeProfileEffect === frame.id : (
+      isNameplate ? (user.activeNameplate === frame.id || user.activeFrame === frame.id) 
+      : user.activeFrame === frame.id
+    )
+  );
 
   const handleAction = async () => {
     if (isOwned) {
@@ -306,7 +317,7 @@ function FrameCard({ frame, inventoryItems, onShowPremiumModal }) {
                   onClick={() => handleAction()}
                   className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white font-bold text-xs rounded-md transition-all cursor-pointer shadow-md"
                 >
-                  Trang bị {isNameplate ? 'bảng tên' : 'khung'}
+                  Trang bị {isProfileEffect ? 'hiệu ứng hồ sơ' : isNameplate ? 'bảng tên' : 'khung'}
                 </button>
               )}
             </div>
@@ -355,15 +366,10 @@ export default function ShopPage() {
     
     // Fetch inventory
     const fetchInv = async () => {
-      const token = localStorage.getItem('token') || localStorage.getItem('admin_token');
-      if (!token) return;
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/shop/inventory`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const result = await res.json();
-        if (result.status === 'success') {
-          setInventoryItems(result.data || []);
+        const res = await axiosClient.get('/api/shop/inventory');
+        if (res.data?.status === 'success') {
+          setInventoryItems(res.data.data || []);
         }
       } catch (e) {}
     };
