@@ -4,7 +4,7 @@ import { useSelector } from 'react-redux';
 import { io } from 'socket.io-client';
 import { 
   Phone, Video, UserPlus, UserMinus, ShieldAlert, Hand, PlusCircle, Gift, Image as ImageIcon, 
-  Smile, Send, Search, Loader2, Sparkles, AlertCircle, X, CornerUpLeft, MessageSquare, PanelRightClose, PanelRight, Users
+  Smile, Send, Search, Loader2, Sparkles, AlertCircle, X, CornerUpLeft, MessageSquare, PanelRightClose, PanelRight, Users, MoreHorizontal, Crown
 } from 'lucide-react';
 import dmService from '../../services/client/dmService';
 import friendService from '../../services/client/friendService';
@@ -421,6 +421,12 @@ export default function DirectMessagePage() {
                   <img src={nameplateInfo.animatedUrl || nameplateInfo.staticUrl} alt="nameplate" className="w-full h-full object-cover" />
                 </div>
               )}
+              {/* Top right Three Dots action button */}
+              <div className="absolute top-2 right-2 z-20">
+                <button className="w-7 h-7 rounded-full bg-black/40 hover:bg-black/70 text-white flex items-center justify-center transition-colors cursor-pointer backdrop-blur-sm">
+                  <MoreHorizontal className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
             {/* Avatar Row (Placed outside overflow-hidden banner so avatar is NEVER clipped) */}
@@ -441,17 +447,34 @@ export default function DirectMessagePage() {
             {/* User Info Card Content */}
             <div className="pt-3 px-4 pb-6 space-y-4 relative z-20">
               <div className="bg-[#111214]/90 backdrop-blur-md p-4 rounded-xl border border-[#1f2023]/80 shadow-xl space-y-3">
-                <div>
-                  <h2 className="text-xl font-bold text-white flex items-center gap-1.5">
-                    {recipient.displayName || recipient.username}
-                  </h2>
-                  <p className="text-xs text-[#b5bac1]">@{recipient.username}</p>
-                  {recipient.pronouns && (
-                    <span className="inline-block mt-1 text-[11px] text-[#949ba4] bg-[#2b2d31] px-2 py-0.5 rounded-full font-medium">
-                      {recipient.pronouns}
-                    </span>
-                  )}
+                {/* Display Name with Nameplate Overlay */}
+                <div className="relative inline-block w-full">
+                  <div className="relative inline-flex items-center gap-1.5 px-2 py-1 rounded-lg overflow-hidden my-0.5">
+                    {nameplateInfo && (
+                      <img 
+                        src={nameplateInfo.animatedUrl || nameplateInfo.staticUrl} 
+                        className="absolute inset-0 w-full h-full object-cover z-0 opacity-90 mix-blend-screen" 
+                        alt="nameplate" 
+                      />
+                    )}
+                    <h2 className="relative z-10 text-xl font-bold text-white drop-shadow-md flex items-center gap-1.5">
+                      {recipient.displayName || recipient.username}
+                      {recipient.isPremium && <Sparkles className="w-4 h-4 text-amber-400 shrink-0" title="Vetrix Premium" />}
+                    </h2>
+                  </div>
+                  <p className="text-xs text-[#b5bac1] flex items-center gap-1 mt-0.5">
+                    @{recipient.username}
+                    {recipient.pronouns && <span className="text-[#949ba4] font-normal">• {recipient.pronouns}</span>}
+                  </p>
                 </div>
+
+                {/* Role Badge ("chủ sở hữu" / "Quản trị viên") */}
+                {recipient.role === 'admin' && (
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-bold">
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" />
+                    chủ sở hữu
+                  </div>
+                )}
 
                 {recipient.aboutMe && (
                   <div className="border-t border-[#232428] pt-2">
@@ -501,14 +524,20 @@ export default function DirectMessagePage() {
                 </div>
               )}
 
-              <div className="pt-2">
-                <button 
-                  onClick={() => navigate('/friends')}
-                  className="w-full py-2.5 bg-[#35373c] hover:bg-[#404249] text-white text-xs font-semibold rounded-lg transition-colors cursor-pointer shadow-md"
-                >
-                  Xem danh sách bạn bè
-                </button>
-              </div>
+              {/* Quick Message Input Box inside Profile Card */}
+              <form onSubmit={handleSendMessage} className="relative bg-[#111214]/90 border border-[#1f2023]/80 rounded-xl p-2.5 flex items-center justify-between shadow-xl">
+                <input 
+                  type="text" 
+                  value={inputText}
+                  onChange={handleInputChange}
+                  placeholder={`Tin nhắn @${recipient.displayName || recipient.username}`}
+                  className="w-full bg-transparent text-xs text-white placeholder-[#80848e] outline-none pr-6"
+                />
+                <Smile 
+                  className="w-4 h-4 text-[#949ba4] hover:text-yellow-400 cursor-pointer shrink-0" 
+                  onClick={() => setShowEmojiPicker(prev => !prev)}
+                />
+              </form>
             </div>
           </div>
         );
