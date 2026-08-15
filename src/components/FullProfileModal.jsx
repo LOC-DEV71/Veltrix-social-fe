@@ -1,16 +1,39 @@
 import React, { useEffect, useState, useRef } from 'react';
+import ReactDOM from 'react-dom';
 import { X, UserPlus, MessageCircle, MoreHorizontal } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import axiosClient from '../services/axiosClient';
 import LoopingAPNG from './LoopingAPNG';
 import SequentialAPNGLayers from './SequentialAPNGLayers';
 
-export default function FullProfileModal({ isOpen, onClose, member, myCommunities = [], onSelectCommunity }) {
+export default function FullProfileModal({ isOpen, onClose, member: initialMember, myCommunities = [], onSelectCommunity }) {
   const currentUser = useSelector(state => state.auth.user);
+  const [member, setMember] = useState(initialMember);
   const isSelf = member && String(currentUser?._id || currentUser?.id) === String(member?._id || member?.id);
   const [activeTab, setActiveTab] = useState('info');
   const [mutualFriends, setMutualFriends] = useState([]);
   const [loadingMutualFriends, setLoadingMutualFriends] = useState(false);
+
+  useEffect(() => {
+    setMember(initialMember);
+    if (isOpen && initialMember) {
+      const targetId = initialMember._id || initialMember.id || initialMember.user?._id || initialMember.user?.id;
+      if (targetId) {
+        axiosClient.get(`/api/auth/profile/${targetId}`)
+          .then(res => {
+            if (res.data?.success) {
+              const fetchedUser = res.data.data;
+              if (initialMember.user) {
+                setMember({ ...initialMember, user: { ...initialMember.user, ...fetchedUser } });
+              } else {
+                setMember({ ...initialMember, ...fetchedUser });
+              }
+            }
+          })
+          .catch(err => console.error('Lỗi lấy full profile:', err));
+      }
+    }
+  }, [isOpen, initialMember]);
 
   useEffect(() => {
     if (isOpen && !isSelf && member) {
@@ -76,8 +99,8 @@ export default function FullProfileModal({ isOpen, onClose, member, myCommunitie
   const profileEffectUrl = member.activeProfileEffectAnimatedUrl || member.user?.activeProfileEffectAnimatedUrl;
   const profileEffectLayers = member.activeProfileEffectLayers || member.user?.activeProfileEffectLayers || [];
 
-  return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/70 animate-in fade-in duration-200" onClick={onClose}>
+  return ReactDOM.createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/70 animate-in fade-in duration-200" onClick={onClose}>
       <div 
         className="w-full max-w-[1000px] h-[720px] rounded-2xl shadow-2xl relative animate-in zoom-in-95 duration-200"
         style={{ 
@@ -187,16 +210,21 @@ export default function FullProfileModal({ isOpen, onClose, member, myCommunitie
               )}
 
               <div className="bg-black/30 rounded-lg p-3 flex-1 flex flex-col backdrop-blur-sm">
-                <h3 className="text-[11px] font-bold text-[#f2f3f5] uppercase mb-2">Vai trò</h3>
-                {member.role ? (
-                  <div className="flex flex-wrap gap-1">
-                    <div className="flex items-center gap-1.5 bg-[#2b2d31]/80 border border-[#1f2023]/50 px-2 py-1 rounded text-xs font-medium text-[#dbdee1]">
-                      <div className={`w-2.5 h-2.5 rounded-full ${member.role === 'owner' ? 'bg-amber-500' : member.role === 'admin' ? 'bg-rose-400' : 'bg-[#949ba4]'}`} />
-                      {member.role === 'owner' ? 'Chủ sở hữu' : member.role === 'admin' ? 'Quản trị viên' : 'Thành viên'}
-                    </div>
-                  </div>
-                ) : (
-                  <span className="text-xs text-[#949ba4]">Không có vai trò</span>
+                {/* Only show roles if this is a community member context (has member.user) */}
+                {initialMember?.user && (
+                  <>
+                    <h3 className="text-[11px] font-bold text-[#f2f3f5] uppercase mb-2">Vai trò</h3>
+                    {member.role ? (
+                      <div className="flex flex-wrap gap-1 mb-4">
+                        <div className="flex items-center gap-1.5 bg-[#2b2d31]/80 border border-[#1f2023]/50 px-2 py-1 rounded text-xs font-medium text-[#dbdee1]">
+                          <div className={`w-2.5 h-2.5 rounded-full ${member.role === 'owner' ? 'bg-amber-500' : member.role === 'admin' ? 'bg-rose-400' : 'bg-[#949ba4]'}`} />
+                          {member.role === 'owner' ? 'Chủ sở hữu' : member.role === 'admin' ? 'Quản trị viên' : 'Thành viên'}
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-[#949ba4] mb-4">Không có vai trò</span>
+                    )}
+                  </>
                 )}
                 
                 <h3 className="text-[11px] font-bold text-[#f2f3f5] uppercase mt-4 mb-2">Ghi chú</h3>
@@ -383,6 +411,7 @@ export default function FullProfileModal({ isOpen, onClose, member, myCommunitie
         </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

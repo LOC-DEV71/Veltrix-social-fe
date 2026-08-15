@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useLayoutEffect } from 'react';
 import { useParams, useLocation, useOutletContext, useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import { useSelector } from 'react-redux';
@@ -11,6 +11,7 @@ import EmojiPicker from 'emoji-picker-react';
 import MemberProfilePopout from '../../components/MemberProfilePopout';
 import FullProfileModal from '../../components/FullProfileModal';
 import ForwardMessageModal from '../../components/ForwardMessageModal';
+import LinkPreview from '../../components/chat/LinkPreview';
 import { useTitle } from '../../hooks/useTitle';
 
 // Helper to get frame border color based on frame name
@@ -72,9 +73,13 @@ export default function ChatPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [globalPinnedMessages, setGlobalPinnedMessages] = useState([]);
   const chatFeedRef = useRef(null);
+  const isLoadingMoreRef = useRef(false);
+  const isJumpingRef = useRef(false);
+  const scrollPreservationRef = useRef({ previousScrollHeight: 0, previousScrollTop: 0, isPrepending: false });
   const [profilePopout, setProfilePopout] = useState({ isOpen: false, member: null, position: null });
   const [fullProfileUser, setFullProfileUser] = useState(null);
   const [slowModeError, setSlowModeError] = useState('');
+  const [isViewingOldContext, setIsViewingOldContext] = useState(false);
   const navigate = useNavigate();
 
   const scrollToBottom = useCallback(() => {
@@ -93,8 +98,17 @@ export default function ChatPage() {
   const canAttachFiles = checkPermission(channelInfo, user?._id || user?.id, myRole, 'attach_files');
   const canAddReactions = checkPermission(channelInfo, user?._id || user?.id, myRole, 'add_reactions');
 
-  useEffect(() => {
-    scrollToBottom();
+  useLayoutEffect(() => {
+    if (scrollPreservationRef.current.isPrepending && chatFeedRef.current) {
+      const container = chatFeedRef.current;
+      const heightDifference = container.scrollHeight - scrollPreservationRef.current.previousScrollHeight;
+      container.scrollTop = scrollPreservationRef.current.previousScrollTop + heightDifference;
+      
+      scrollPreservationRef.current.isPrepending = false;
+      isLoadingMoreRef.current = false;
+    } else if (!isLoadingMoreRef.current && !isJumpingRef.current) {
+      scrollToBottom();
+    }
   }, [messages, scrollToBottom]);
 
   // Sync channelInfo & nsfwConfirmed
@@ -116,12 +130,12 @@ export default function ChatPage() {
     }
   }, [channelId, communityId, communityChannels]);
 
-  // Load message history from API whenever channelId changes
-  useEffect(() => {
+  const fetchInitialMessages = () => {
     if (!channelId) return;
     setLoadingHistory(true);
     setMessages([]);
     setHasMore(true);
+    setIsViewingOldContext(false);
 
     axiosClient.get(`/api/messages/${channelId}?limit=30`)
       .then(res => {
@@ -136,6 +150,11 @@ export default function ChatPage() {
       .finally(() => {
         setLoadingHistory(false);
       });
+  };
+
+  // Load message history from API whenever channelId changes
+  useEffect(() => {
+    fetchInitialMessages();
 
     // Load pinned messages
     axiosClient.get(`/api/messages/${channelId}?pinned=true`)
@@ -341,6 +360,7 @@ export default function ChatPage() {
     if (loadingMore || !hasMore || messages.length === 0) return;
 
     setLoadingMore(true);
+    isLoadingMoreRef.current = true;
     const oldestMessage = messages[0];
     try {
       const res = await axiosClient.get(`/api/messages/${channelId}?limit=30&before=${oldestMessage.createdAt}`);
@@ -348,9 +368,15 @@ export default function ChatPage() {
         const newMessages = res.data.data;
         if (newMessages.length < 30) setHasMore(false);
 
-        // Save current scroll position
+        // Save current scroll position BEFORE state update
         const container = chatFeedRef.current;
-        const previousScrollHeight = container ? container.scrollHeight : 0;
+        if (container) {
+          scrollPreservationRef.current = {
+            previousScrollHeight: container.scrollHeight,
+            previousScrollTop: container.scrollTop,
+            isPrepending: true
+          };
+        }
 
         setMessages(prev => {
           // Filter out duplicates
@@ -358,16 +384,12 @@ export default function ChatPage() {
           const uniqueNew = newMessages.filter(m => !existingIds.has(m._id));
           return [...uniqueNew, ...prev];
         });
-
-        // Restore scroll position
-        setTimeout(() => {
-          if (container) {
-            container.scrollTop = container.scrollHeight - previousScrollHeight;
-          }
-        }, 0);
+      } else {
+        isLoadingMoreRef.current = false;
       }
     } catch (error) {
       console.error('Error loading more messages:', error);
+      isLoadingMoreRef.current = false;
     } finally {
       setLoadingMore(false);
     }
@@ -399,16 +421,47 @@ export default function ChatPage() {
     }
   };
 
-  const handleJumpToMessage = (msgId) => {
+  const handleJumpToMessage = async (msgId) => {
     const el = document.getElementById(`message-${msgId}`);
-    if (el) {
+    
+    if (!el) {
+      // Message not in DOM, fetch its context
+      try {
+        setLoadingHistory(true);
+        isJumpingRef.current = true;
+        const res = await axiosClient.get(`/api/messages/${channelId}?around=${msgId}&limit=30`);
+        if (res.data.status === 'success' && res.data.data) {
+          setMessages(res.data.data);
+          setIsViewingOldContext(true);
+          
+          // Wait for render
+          setTimeout(() => {
+            const newEl = document.getElementById(`message-${msgId}`);
+            if (newEl) {
+              newEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              setHighlightedMsgId(msgId);
+              setTimeout(() => setHighlightedMsgId(null), 2000);
+            }
+            isJumpingRef.current = false;
+          }, 100);
+        } else {
+          isJumpingRef.current = false;
+        }
+      } catch (err) {
+        console.error('Failed to jump to message:', err);
+        isJumpingRef.current = false;
+      } finally {
+        setLoadingHistory(false);
+      }
+    } else {
       el.scrollIntoView({ behavior: 'smooth', block: 'center' });
       setHighlightedMsgId(msgId);
-      setShowPinnedDropdown(false);
       setTimeout(() => {
         setHighlightedMsgId(null);
       }, 2000);
     }
+    
+    setShowPinnedDropdown(false);
   };
 
   const handleFileChange = (e) => {
@@ -601,13 +654,15 @@ export default function ChatPage() {
 
   const renderMessageContent = (content) => {
     if (!content) return null;
-    const parts = content.split(/(@everyone|@[^\s]+)/g);
+    const parts = content.split(/(@everyone|@[^\s]+|https?:\/\/[^\s]+)/g);
 
     return parts.map((part, i) => {
-      if (part === '@everyone') {
+      if (!part) return null;
+      if (part === '@everyone' || part.startsWith('@')) {
         return <span key={i} className="bg-indigo-500/40 text-indigo-200 font-bold px-1.5 py-0.5 rounded mx-[1px]">{part}</span>;
-      } else if (part.startsWith('@')) {
-        return <span key={i} className="bg-indigo-500/40 text-indigo-200 font-bold px-1.5 py-0.5 rounded mx-[1px]">{part}</span>;
+      }
+      if (part.match(/^https?:\/\/[^\s]+$/)) {
+        return <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">{part}</a>;
       }
       return <React.Fragment key={i}>{part}</React.Fragment>;
     });
@@ -715,7 +770,26 @@ export default function ChatPage() {
 
 
       {/* Scrollable Chat Feed */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-0" ref={chatFeedRef} onScroll={handleScroll}>
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-0 relative" ref={chatFeedRef} onScroll={handleScroll}>
+
+        {hasMore && !loadingHistory && (
+          <div className="text-center py-4 text-[#80848e] text-sm flex items-center justify-center gap-2">
+            <span className="w-4 h-4 border-2 border-[#80848e] border-t-transparent rounded-full animate-spin"></span>
+            Đang tải thêm tin nhắn cũ...
+          </div>
+        )}
+
+        {isViewingOldContext && (
+          <div className="sticky top-0 z-50 flex justify-center mt-2 mb-4">
+            <div 
+              className="bg-[#5865F2] hover:bg-[#4752C4] text-white px-4 py-1.5 rounded-full text-sm font-medium shadow-lg cursor-pointer transition-colors flex items-center gap-2"
+              onClick={fetchInitialMessages}
+            >
+              <span>Đang xem tin nhắn cũ</span>
+              <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full ml-1">Nhảy tới hiện tại ⬇</span>
+            </div>
+          </div>
+        )}
 
         {/* Loading more spinner */}
         {loadingMore && (
@@ -989,6 +1063,7 @@ export default function ChatPage() {
                       </p>
                     )
                   )}
+                  {msg.linkMetadata && <LinkPreview linkMetadata={msg.linkMetadata} />}
                   {msg.attachments && msg.attachments.length > 0 && (
                     <div className="flex flex-wrap gap-2 mt-1">
                       {msg.attachments.map((att, i) => (

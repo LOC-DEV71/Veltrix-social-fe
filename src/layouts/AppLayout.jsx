@@ -71,6 +71,7 @@ export default function AppLayout() {
   
   const [unreadMentions, setUnreadMentions] = useState({ community: {}, channel: {} });
   const [unreadMessages, setUnreadMessages] = useState({ community: {}, channel: {} });
+  const [unreadDMs, setUnreadDMs] = useState({});
   
   // Real communities fetched from backend
   const [myCommunities, setMyCommunities] = useState([]);
@@ -97,7 +98,19 @@ export default function AppLayout() {
       setCommunityMembers([]);
       setSelectedChannel(null);
     }
-  }, [location.pathname]);
+    
+    // Xoá unread badge nếu vào dm
+    if (location.pathname.startsWith('/dm/')) {
+      const friendId = location.pathname.split('/dm/')[1];
+      if (friendId && unreadDMs[friendId]) {
+        setUnreadDMs(prev => {
+          const next = { ...prev };
+          delete next[friendId];
+          return next;
+        });
+      }
+    }
+  }, [location.pathname, unreadDMs]);
 
   useEffect(() => {
     if (user?._id) {
@@ -236,6 +249,9 @@ export default function AppLayout() {
       myCommunities.forEach(c => {
         socket.emit('join_community', c._id);
       });
+      dmRooms.forEach(room => {
+        socket.emit('join_dm_room', room._id);
+      });
       socket.emit('get_online_users', (userIdsArray) => {
         setOnlineUserIds(new Set(userIdsArray));
       });
@@ -263,6 +279,37 @@ export default function AppLayout() {
         icon: <Users className="w-5 h-5 text-emerald-400" />
       });
       setTimeout(() => setShowNotification(null), 5000);
+    });
+
+    socket.on('receive_dm_message', (message) => {
+      const isFromMe = String(message.sender?._id || message.sender) === String(user._id);
+      
+      setDmRooms(prev => {
+        const updated = [...prev];
+        const roomIdx = updated.findIndex(r => String(r._id) === String(message.dmRoom));
+        if (roomIdx > -1) {
+          updated[roomIdx] = {
+            ...updated[roomIdx],
+            lastActivity: new Date(),
+            lastMessage: message
+          };
+        }
+        return updated;
+      });
+
+      if (!isFromMe) {
+        const friendId = String(message.sender?._id || message.sender);
+        if (window.location.pathname !== `/dm/${friendId}`) {
+          setUnreadDMs(prev => ({ ...prev, [friendId]: (prev[friendId] || 0) + 1 }));
+          
+          setShowNotification({
+            title: `Tin nhắn từ ${message.sender?.displayName || message.sender?.username}`,
+            message: message.content || 'Đã gửi một tệp đính kèm',
+            icon: <MessageSquare className="w-5 h-5 text-indigo-400" />
+          });
+          setTimeout(() => setShowNotification(null), 5000);
+        }
+      }
     });
 
     socket.on('new_notification', (data) => {
@@ -327,7 +374,7 @@ export default function AppLayout() {
     });
 
     return () => socket.close();
-  }, [user?._id, myCommunities]);
+  }, [user?._id, myCommunities, dmRooms]);
 
   const getFrameInfo = (userObj) => {
     if (!userObj) return null;
@@ -367,6 +414,8 @@ export default function AppLayout() {
   const activeFrameInfo = getFrameInfo(user);
   const activeNameplateInfo = getNameplateInfo(user);
 
+  const totalUnreadDMs = Object.values(unreadDMs).reduce((a, b) => a + b, 0);
+
   // Only show the authenticated real user — no mock data
   const members = user && user.username ? [
     { 
@@ -393,7 +442,16 @@ export default function AppLayout() {
           }`}
         >
           <img src={logoVeltrix} alt="Home" className="w-8 h-auto drop-shadow-md" />
-          <span className={`absolute left-0 w-1 bg-white rounded-r-lg group-hover:h-5 transition-all duration-200 ${!selectedCommunity ? 'h-10 scale-100' : 'h-2 scale-0'}`} />
+          
+          {totalUnreadDMs > 0 && (
+            <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-rose-500 rounded-full border-4 border-[#1e1f22] flex items-center justify-center pointer-events-none z-20">
+              <span className="text-[10px] font-bold text-white">{totalUnreadDMs > 9 ? '9+' : totalUnreadDMs}</span>
+            </div>
+          )}
+
+          <span className={`absolute left-0 w-1 bg-white rounded-r-lg group-hover:h-5 transition-all duration-200 ${
+            !selectedCommunity ? 'h-10 scale-100' : (totalUnreadDMs > 0 ? 'h-2 scale-100' : 'h-2 scale-0')
+          }`} />
           <span className="absolute left-20 px-3 py-1.5 text-sm font-semibold text-white bg-[#111214] rounded-md shadow-lg opacity-0 pointer-events-none group-hover:opacity-100 group-hover:translate-x-1 translate-x-0 transition-all duration-200 z-55 whitespace-nowrap">
             Tin nhắn trực tiếp
           </span>
@@ -571,21 +629,31 @@ export default function AppLayout() {
                     }
                   }
 
+                  // Sort by lastActivity (newest first)
+                  displayDmList.sort((a, b) => {
+                    const timeA = a.lastActivity ? new Date(a.lastActivity).getTime() : 0;
+                    const timeB = b.lastActivity ? new Date(b.lastActivity).getTime() : 0;
+                    return timeB - timeA;
+                  });
+
                   return displayDmList.length > 0 ? (
                     displayDmList.map((friend) => {
-                      const isOnline = onlineUserIds.has(String(friend._id || friend.id));
+                      const friendId = String(friend._id || friend.id);
+                      const isOnline = onlineUserIds.has(friendId);
                       const avatarSrc = friend.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(friend.displayName || friend.username || 'User')}&background=2b2d31&color=fff`;
+                      const frameInfo = getFrameInfo(friend);
 
-                      const isActive = location.pathname === `/dm/${friend._id}`;
+                      const isActive = location.pathname === `/dm/${friendId}`;
+                      const hasUnread = unreadDMs[friendId] > 0;
 
                       return (
                         <div 
-                          key={friend._id}
-                          onClick={() => navigate(`/dm/${friend._id}`)}
+                          key={friendId}
+                          onClick={() => navigate(`/dm/${friendId}`)}
                           className={`flex items-center justify-between px-2 py-2 rounded-md cursor-pointer transition-all group relative overflow-hidden ${
                             isActive 
                               ? 'bg-[#35373c] text-white font-semibold' 
-                              : 'text-[#949ba4] hover:bg-[#35373c]/80 hover:text-[#dbdee1]'
+                              : (hasUnread ? 'text-[#f2f3f5] hover:bg-[#35373c]/80' : 'text-[#949ba4] hover:bg-[#35373c]/80 hover:text-[#dbdee1]')
                           }`}
                         >
                           {/* Nameplate background if present */}
@@ -598,13 +666,24 @@ export default function AppLayout() {
                           <div className="relative z-10 flex items-center gap-3 min-w-0">
                             <div className="relative shrink-0 w-8 h-8 rounded-full">
                               <img src={avatarSrc} alt={friend.username} className="w-full h-full rounded-full object-cover" />
-                              <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#2b2d31] ${isOnline ? 'bg-[#23a55a]' : 'bg-[#80848e]'}`} />
+                              {frameInfo && (
+                                <div className="absolute inset-0 z-10 pointer-events-none scale-[1.35]">
+                                  <img src={frameInfo.animatedUrl || frameInfo.staticUrl} alt="frame" className="w-full h-full object-contain" />
+                                </div>
+                              )}
+                              <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#2b2d31] z-20 ${isOnline ? 'bg-[#23a55a]' : 'bg-[#80848e]'}`} />
                             </div>
                             <div className="flex flex-col min-w-0">
-                              <span className="text-sm font-medium text-[#f2f3f5] truncate group-hover:text-white">{friend.displayName || friend.username}</span>
+                              <span className={`text-sm truncate group-hover:text-white ${hasUnread ? 'font-bold text-white' : 'font-medium'}`}>{friend.displayName || friend.username}</span>
                               <span className="text-[11px] text-[#949ba4] truncate">@{friend.username}</span>
                             </div>
                           </div>
+                          
+                          {hasUnread && (
+                            <div className="relative z-10 flex items-center justify-center bg-rose-500 text-white text-[10px] font-bold rounded-full w-4 h-4 shrink-0 shadow-md">
+                              {unreadDMs[friendId] > 9 ? '9+' : unreadDMs[friendId]}
+                            </div>
+                          )}
                         </div>
                       );
                     })

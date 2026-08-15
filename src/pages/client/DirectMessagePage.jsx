@@ -176,6 +176,22 @@ export default function DirectMessagePage() {
     };
   }, [room?._id, user?._id]);
 
+  const renderMessageContent = (content) => {
+    if (!content) return null;
+    const parts = content.split(/(@everyone|@[^\s]+|https?:\/\/[^\s]+)/g);
+
+    return parts.map((part, i) => {
+      if (!part) return null;
+      if (part === '@everyone' || part.startsWith('@')) {
+        return <span key={i} className="bg-indigo-500/40 text-indigo-200 font-bold px-1.5 py-0.5 rounded mx-[1px]">{part}</span>;
+      }
+      if (part.match(/^https?:\/\/[^\s]+$/)) {
+        return <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">{part}</a>;
+      }
+      return <React.Fragment key={i}>{part}</React.Fragment>;
+    });
+  };
+
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!inputText.trim() || sending || !room?._id) return;
@@ -343,7 +359,10 @@ export default function DirectMessagePage() {
                             {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </span>
                         </div>
-                        <p className="text-sm text-[#dbdee1] whitespace-pre-wrap break-words leading-relaxed">{msg.content}</p>
+                        <p className="text-sm text-[#dbdee1] whitespace-pre-wrap break-words leading-relaxed">
+                          {renderMessageContent(msg.content)}
+                        </p>
+                        {msg.linkMetadata && <LinkPreview linkMetadata={msg.linkMetadata} />}
                       </div>
                     </div>
                   );

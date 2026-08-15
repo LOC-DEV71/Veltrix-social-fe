@@ -142,6 +142,7 @@ export default function MemberProfilePopout({ isOpen, onClose, member, position,
                 onClick={() => {
                   if (onOpenFullProfile) {
                     onOpenFullProfile(member);
+                    onClose();
                   }
                 }}
               >
