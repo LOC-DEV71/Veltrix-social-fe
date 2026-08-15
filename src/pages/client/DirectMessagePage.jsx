@@ -22,6 +22,7 @@ export default function DirectMessagePage() {
 
   const [room, setRoom] = useState(null);
   const [recipient, setRecipient] = useState(null);
+  const [mutualCommunities, setMutualCommunities] = useState([]);
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(true);
