@@ -64,8 +64,9 @@ export default function FriendsPage() {
     newSocket.on('user_status_change', ({ userId, isOnline }) => {
       setOnlineUserIds(prev => {
         const next = new Set(prev);
-        if (isOnline) next.add(userId);
-        else next.delete(userId);
+        const uStr = String(userId);
+        if (isOnline) next.add(uStr);
+        else next.delete(uStr);
         return next;
       });
     });
@@ -160,8 +161,8 @@ export default function FriendsPage() {
   const pendingRequests = friendsData.friendRequests || [];
   
   // Real-time online filtering
-  const onlineFriends = friends.filter(f => onlineUserIds.has(f._id));
-  const offlineFriends = friends.filter(f => !onlineUserIds.has(f._id)); 
+  const onlineFriends = friends.filter(f => onlineUserIds.has(String(f._id || f.id)));
+  const offlineFriends = friends.filter(f => !onlineUserIds.has(String(f._id || f.id))); 
 
   const incomingRequests = pendingRequests.filter(req => req.type === 'incoming');
   const outgoingRequests = pendingRequests.filter(req => req.type === 'outgoing');
@@ -170,7 +171,7 @@ export default function FriendsPage() {
 
   const renderFriendCard = (friend, isRequest = false, reqType = null) => {
     const avatarSrc = friend.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(friend.displayName || friend.username || 'User')}&background=2b2d31&color=fff`;
-    const isOnline = onlineUserIds.has(friend._id);
+    const isOnline = onlineUserIds.has(String(friend._id || friend.id));
 
     return (
       <div key={friend._id} className={`relative flex items-center justify-between p-3 rounded-lg hover:bg-[#35373c]/80 border-t border-[#1f2023] group transition-all overflow-hidden ${!isOnline && !isRequest ? 'opacity-60 hover:opacity-100' : ''}`}>

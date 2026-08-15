@@ -594,7 +594,11 @@ export default function AppLayout() {
                     
                     {(() => {
                       const userId = user?._id || user?.id;
-                      const myRole = communityMembers.find(m => String(m.user._id || m.user.id || m.user) === String(userId))?.role;
+                      const myRole = communityMembers.find(m => {
+                        if (!m || !m.user) return false;
+                        const uId = m.user._id || m.user.id || m.user;
+                        return uId && String(uId) === String(userId);
+                      })?.role;
                       const canCreateInvite = checkPermission(ch, userId, myRole, 'create_invite');
                       const canManageChannel = checkPermission(ch, userId, myRole, 'manage_channel');
                       

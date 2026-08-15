@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import { Sparkles, Loader2, ArrowRight } from 'lucide-react';
+import { Sparkles, Loader2, ArrowRight, KeyRound, CheckCircle2, Send } from 'lucide-react';
+import { GoogleLogin } from '@react-oauth/google';
 import authService from '../../services/client/authService';
 import logoVeltrix from '../../assets/logo-veltrix.png';
 import { loginSuccess } from '../../redux/slices/authSlice';
@@ -17,15 +18,94 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   
+  // 6-digit OTP PIN State
+  const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
+  const otpInputRefs = useRef([]);
+
+  // OTP Request State
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+
   // Loading & Notification State
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
+  const otpCode = otpDigits.join('');
+
+  const handleOtpDigitChange = (val, idx) => {
+    const cleanVal = val.replace(/\D/g, '').slice(-1);
+    const newDigits = [...otpDigits];
+    newDigits[idx] = cleanVal;
+    setOtpDigits(newDigits);
+
+    if (cleanVal && idx < 5) {
+      otpInputRefs.current[idx + 1]?.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (e, idx) => {
+    if (e.key === 'Backspace' && !otpDigits[idx] && idx > 0) {
+      otpInputRefs.current[idx - 1]?.focus();
+    }
+  };
+
+  const handleOtpPaste = (e) => {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    if (!pasted) return;
+
+    const newDigits = ['', '', '', '', '', ''];
+    for (let i = 0; i < pasted.length; i++) {
+      newDigits[i] = pasted[i];
+    }
+    setOtpDigits(newDigits);
+
+    const focusIdx = Math.min(pasted.length, 5);
+    otpInputRefs.current[focusIdx]?.focus();
+  };
+
+  const handleSendOTP = async () => {
+    if (!email) {
+      setError('Vui lòng nhập Email trước khi lấy mã OTP!');
+      return;
+    }
+
+    try {
+      setOtpLoading(true);
+      setError(null);
+      setSuccess(null);
+
+      const res = await authService.sendOTP(email);
+      if (res.success) {
+        setOtpSent(true);
+        setSuccess(res.message);
+        setCountdown(60);
+
+        const timer = setInterval(() => {
+          setCountdown((prev) => {
+            if (prev <= 1) {
+              clearInterval(timer);
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+      } else {
+        setError(res.message || 'Gửi mã OTP thất bại!');
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Không thể gửi mã OTP tới Email này!');
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!username || !email || !password) {
-      setError('Vui lòng điền đầy đủ tất cả các trường!');
+    if (!username || !email || !password || otpCode.length !== 6) {
+      setError('Vui lòng điền đầy đủ thông tin và đủ 6 chữ số mã OTP!');
       return;
     }
 
@@ -34,11 +114,9 @@ export default function RegisterPage() {
       setError(null);
       setSuccess(null);
 
-      // Call API using our authService (automatic Cookie setting on success)
-      const result = await authService.register(username, email, password);
+      const result = await authService.register(username, email, password, otpCode);
 
       if (result.success) {
-        // Sync administrative details into Redux Toolkit store
         dispatch(loginSuccess(result.data));
         setSuccess(result.message);
         setTimeout(() => {
@@ -59,6 +137,39 @@ export default function RegisterPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    try {
+      setLoading(true);
+      setError(null);
+      setSuccess(null);
+      const result = await authService.googleLogin(credentialResponse.credential);
+      if (result.success) {
+        dispatch(loginSuccess(result.data));
+        setSuccess(result.message);
+        setTimeout(() => {
+          navigate('/');
+        }, 1200);
+      } else {
+        setError(result.message || 'Đăng nhập Google thất bại!');
+      }
+    } catch (err) {
+      if (err.response?.status === 403 && err.response?.data?.isBanned) {
+        localStorage.setItem('isBanned', 'true');
+        localStorage.setItem('banReason', err.response.data.message || err.response.data.reason || 'Vi phạm chính sách hệ thống');
+        localStorage.setItem('banType', err.response.data.banType || 'both');
+        navigate('/banned');
+        return;
+      }
+      setError(err.response?.data?.message || 'Đã xảy ra lỗi khi đăng nhập bằng Google!');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleError = () => {
+    setError('Đăng nhập Google không thành công. Vui lòng thử lại!');
   };
 
   return (
@@ -107,18 +218,84 @@ export default function RegisterPage() {
             />
           </div>
 
+          {/* Email Input Field with Styled Send OTP Button */}
           <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-[#b5bac1] uppercase tracking-wider">
-              Email <span className="text-rose-500">*</span>
+            <label className="text-[10px] font-bold text-[#b5bac1] uppercase tracking-wider flex justify-between items-center">
+              <span>Email <span className="text-rose-500">*</span></span>
+              {otpSent && (
+                <span className="text-emerald-400 text-[10px] font-medium flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" /> Đã gửi mã vào Mail
+                </span>
+              )}
             </label>
-            <input 
-              type="email" 
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="nhap-email-cua-ban@gmail.com"
-              className="w-full h-10 bg-[#1e1f22] border border-[#1f2023] rounded p-3 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors"
-              required
-            />
+            <div className="flex gap-2">
+              <input 
+                type="email" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="nhap-email-cua-ban@gmail.com"
+                className="w-full h-10 bg-[#1e1f22] border border-[#1f2023] rounded p-3 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors"
+                required
+              />
+              <button
+                type="button"
+                onClick={handleSendOTP}
+                disabled={otpLoading || countdown > 0}
+                className="px-3.5 h-10 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 disabled:from-gray-800 disabled:to-gray-900 disabled:text-gray-500 text-white font-bold text-xs rounded-lg shadow-md transition-all active:scale-95 whitespace-nowrap cursor-pointer flex items-center justify-center gap-1.5 min-w-[105px]"
+              >
+                {otpLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : countdown > 0 ? (
+                  <span className="font-mono text-pink-400">{countdown}s</span>
+                ) : (
+                  <>
+                    <Send className="w-3.5 h-3.5" />
+                    <span>{otpSent ? 'Gửi lại' : 'Gửi OTP'}</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* High-tech 6-Digit OTP PIN Section */}
+          <div className="space-y-2 bg-[#23252b]/60 border border-[#1f2023] rounded-xl p-3.5 backdrop-blur-sm">
+            <div className="flex items-center justify-between">
+              <label className="text-[10px] font-bold text-[#b5bac1] uppercase tracking-wider flex items-center gap-1.5">
+                <KeyRound className="w-3.5 h-3.5 text-pink-400" />
+                Mã xác thực OTP (6 chữ số) <span className="text-rose-500">*</span>
+              </label>
+              {otpCode.length === 6 && (
+                <span className="text-emerald-400 text-[10px] font-bold flex items-center gap-1 animate-pulse">
+                  <CheckCircle2 className="w-3 h-3" /> Đã đủ 6 số
+                </span>
+              )}
+            </div>
+
+            {/* 6 PIN Input Boxes */}
+            <div className="flex justify-between items-center gap-1.5 pt-1" onPaste={handleOtpPaste}>
+              {otpDigits.map((digit, idx) => (
+                <input
+                  key={idx}
+                  ref={(el) => (otpInputRefs.current[idx] = el)}
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={1}
+                  value={digit}
+                  onChange={(e) => handleOtpDigitChange(e.target.value, idx)}
+                  onKeyDown={(e) => handleOtpKeyDown(e, idx)}
+                  className={`w-11 h-12 rounded-lg bg-[#1e1f22] text-center text-lg font-bold font-mono border-2 transition-all outline-none ${
+                    digit
+                      ? 'border-indigo-500 text-pink-400 bg-[#262830] shadow-[0_0_12px_rgba(99,102,241,0.3)]'
+                      : 'border-[#1f2023] text-white focus:border-pink-500 focus:shadow-[0_0_15px_rgba(236,72,153,0.4)] focus:bg-[#202228]'
+                  }`}
+                  placeholder="•"
+                />
+              ))}
+            </div>
+            
+            <p className="text-[10px] text-[#949ba4] text-center pt-0.5">
+              Mã OTP gồm 6 chữ số được gửi tới email của bạn. Có hiệu lực trong 5 phút.
+            </p>
           </div>
 
           <div className="space-y-1.5">
@@ -151,6 +328,26 @@ export default function RegisterPage() {
             )}
           </button>
         </form>
+
+        {/* Divider */}
+        <div className="flex items-center my-4">
+          <div className="flex-1 border-t border-[#3f4147]" />
+          <span className="px-3 text-xs text-[#949ba4] font-semibold uppercase">Hoặc</span>
+          <div className="flex-1 border-t border-[#3f4147]" />
+        </div>
+
+        {/* Google Login Button */}
+        <div className="flex justify-center w-full">
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={handleGoogleError}
+            theme="filled_black"
+            shape="pill"
+            width="100%"
+            text="signup_with"
+            locale="vi"
+          />
+        </div>
 
         {/* Footer Redirect link */}
         <div className="text-left text-xs text-[#949ba4] pt-2">

@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, useLocation, useOutletContext } from 'react-router-dom';
+import { useParams, useLocation, useOutletContext, useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import { useSelector } from 'react-redux';
 import axiosClient from '../../services/axiosClient';
 import { PlusCircle, Gift, Image as ImageIcon, Smile, SmilePlus, Send, Crown, Sparkles, Hash, Sticker, Navigation, X, Loader2, AlertTriangle, ArrowLeft, MoreHorizontal, Pencil, Trash2, Copy, Reply, CornerUpRight, CornerUpLeft, Pin, CheckCircle2, MessageSquare, ChevronRight, Palette, Link as LinkIcon, Volume2, Mail, Eraser } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import ExpressionPicker from '../../components/ExpressionPicker';
 import NotificationInbox from '../../components/NotificationInbox';
 import { checkPermission } from '../../utils/permissionUtils';
@@ -13,6 +12,7 @@ import MemberProfilePopout from '../../components/MemberProfilePopout';
 import FullProfileModal from '../../components/FullProfileModal';
 import ForwardMessageModal from '../../components/ForwardMessageModal';
 import { useTitle } from '../../hooks/useTitle';
+
 // Helper to get frame border color based on frame name
 const getFrameColorClass = (frameName) => {
   if (!frameName) return 'bg-transparent';
@@ -63,7 +63,7 @@ export default function ChatPage() {
   const [dropdownMessageId, setDropdownMessageId] = useState(null);
   const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 });
   const [reactionPickerMsgId, setReactionPickerMsgId] = useState(null);
-  const [reactionDetailModal, setReactionDetailModal] = useState(null); // { msg, selectedEmoji }
+  const [reactionDetailModal, setReactionDetailModal] = useState(null);
   const [showPinnedDropdown, setShowPinnedDropdown] = useState(false);
   const [highlightedMsgId, setHighlightedMsgId] = useState(null);
   const [replyingToMessage, setReplyingToMessage] = useState(null);
@@ -77,43 +77,21 @@ export default function ChatPage() {
   const [slowModeError, setSlowModeError] = useState('');
   const navigate = useNavigate();
 
+  const scrollToBottom = useCallback(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, []);
+
   const myRole = communityMembers?.find(m => {
-    const uid = typeof m.user === 'object' ? (m.user._id || m.user.id) : m.user;
+    if (!m || !m.user) return false;
+    const uid = (typeof m.user === 'object' && m.user !== null) ? (m.user._id || m.user.id) : m.user;
     const myUid = user?._id || user?.id;
-    return String(uid) === String(myUid);
+    return uid && myUid && String(uid) === String(myUid);
   })?.role;
 
   const canSendMessage = checkPermission(channelInfo, user?._id || user?.id, myRole, 'send_messages');
   const canManageMessages = checkPermission(channelInfo, user?._id || user?.id, myRole, 'manage_messages');
   const canAttachFiles = checkPermission(channelInfo, user?._id || user?.id, myRole, 'attach_files');
   const canAddReactions = checkPermission(channelInfo, user?._id || user?.id, myRole, 'add_reactions');
-
-
-  useEffect(() => {
-    if (!channelId || !communityId) return;
-    setNsfwConfirmed(localStorage.getItem(`nsfw_${channelId}`) === 'true');
-    
-    if (communityChannels && communityChannels.length > 0) {
-      const ch = communityChannels.find(c => c._id === channelId);
-      if (ch) {
-        setChannelInfo(ch);
-        return;
-      }
-    }
-    
-    axiosClient.get(`/api/communities/${communityId}/channels`)
-      .then(res => {
-        const data = res.data?.data || [];
-        const ch = data.find(c => c._id === channelId);
-        if (ch) setChannelInfo(ch);
-      })
-      .catch(err => console.error(err));
-  }, [channelId, communityId, communityChannels]);
-
-  // Scroll to bottom
-  const scrollToBottom = useCallback(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, []);
 
   useEffect(() => {
     scrollToBottom();
@@ -124,7 +102,6 @@ export default function ChatPage() {
     if (!channelId || !user?._id || !channelInfo) return;
     if (channelInfo.nsfw && !nsfwConfirmed) return; // Wait for confirmation
 
-    // Create socket if not exists
     if (!socketRef.current) {
       socketRef.current = io(import.meta.env.VITE_API_URL || 'http://localhost:5000', {
         autoConnect: false,
@@ -134,13 +111,11 @@ export default function ChatPage() {
 
     const socket = socketRef.current;
 
-    // Leave previous channel if switching
     if (prevChannelRef.current && prevChannelRef.current !== channelId) {
       socket.emit('leave_channel', prevChannelRef.current);
     }
     prevChannelRef.current = channelId;
 
-    // Connect if not already
     if (!socket.connected) {
       socket.connect();
     }
@@ -158,7 +133,6 @@ export default function ChatPage() {
 
     const handleReceiveMessage = (message) => {
       setMessages((prev) => {
-        // Prevent duplicates
         if (prev.some((m) => m._id === message._id)) return prev;
         return [...prev, message];
       });

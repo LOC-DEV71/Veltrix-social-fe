@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { Shield, Sparkles, Loader2, ArrowRight } from 'lucide-react';
+import { GoogleLogin } from '@react-oauth/google';
 import authService from '../../services/client/authService';
 import logoVeltrix from '../../assets/logo-veltrix.png';
 import { loginSuccess } from '../../redux/slices/authSlice';
@@ -58,6 +59,39 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    try {
+      setLoading(true);
+      setError(null);
+      setSuccess(null);
+      const result = await authService.googleLogin(credentialResponse.credential);
+      if (result.success) {
+        dispatch(loginSuccess(result.data));
+        setSuccess(result.message);
+        setTimeout(() => {
+          navigate('/');
+        }, 1200);
+      } else {
+        setError(result.message || 'Đăng nhập Google thất bại!');
+      }
+    } catch (err) {
+      if (err.response?.status === 403 && err.response?.data?.isBanned) {
+        localStorage.setItem('isBanned', 'true');
+        localStorage.setItem('banReason', err.response.data.message || err.response.data.reason || 'Vi phạm chính sách hệ thống');
+        localStorage.setItem('banType', err.response.data.banType || 'both');
+        navigate('/banned');
+        return;
+      }
+      setError(err.response?.data?.message || 'Đã xảy ra lỗi khi đăng nhập bằng Google!');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleError = () => {
+    setError('Đăng nhập Google không thành công. Vui lòng thử lại!');
   };
 
   return (
@@ -140,6 +174,26 @@ export default function LoginPage() {
             )}
           </button>
         </form>
+
+        {/* Divider */}
+        <div className="flex items-center my-4">
+          <div className="flex-1 border-t border-[#3f4147]" />
+          <span className="px-3 text-xs text-[#949ba4] font-semibold uppercase">Hoặc</span>
+          <div className="flex-1 border-t border-[#3f4147]" />
+        </div>
+
+        {/* Google Login Button */}
+        <div className="flex justify-center w-full">
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={handleGoogleError}
+            theme="filled_black"
+            shape="pill"
+            width="100%"
+            text="continue_with"
+            locale="vi"
+          />
+        </div>
 
         {/* Footer Redirect link */}
         <div className="text-left text-xs text-[#949ba4] pt-2">
