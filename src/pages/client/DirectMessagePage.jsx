@@ -4,7 +4,7 @@ import { useSelector } from 'react-redux';
 import { io } from 'socket.io-client';
 import { 
   Phone, Video, UserPlus, UserMinus, ShieldAlert, Hand, PlusCircle, Gift, Image as ImageIcon, 
-  Smile, Send, Search, Loader2, Sparkles, AlertCircle, X, CornerUpLeft, MessageSquare, PanelRightClose, PanelRight
+  Smile, Send, Search, Loader2, Sparkles, AlertCircle, X, CornerUpLeft, MessageSquare, PanelRightClose, PanelRight, Users
 } from 'lucide-react';
 import dmService from '../../services/client/dmService';
 import friendService from '../../services/client/friendService';
@@ -57,6 +57,7 @@ export default function DirectMessagePage() {
         if (res.success && res.data) {
           setRoom(res.data.room);
           setRecipient(res.data.recipient);
+          setMutualCommunities(res.data.mutualCommunities || []);
 
           // Fetch DM messages
           return dmService.getDMMessages(res.data.room._id);
@@ -257,9 +258,20 @@ export default function DirectMessagePage() {
                 </p>
                 
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="px-3 py-1.5 rounded bg-[#2b2d31] text-xs text-[#949ba4] font-medium border border-[#1e1f22]">
-                    Không có máy chủ chung
-                  </span>
+                  {mutualCommunities && mutualCommunities.length > 0 ? (
+                    <button 
+                      onClick={() => navigate(`/community/${mutualCommunities[0]._id}`)}
+                      className="px-3 py-1.5 rounded bg-[#2b2d31] hover:bg-[#35373c] text-xs text-[#5865F2] font-semibold border border-[#1e1f22] flex items-center gap-1.5 transition-colors cursor-pointer"
+                      title={mutualCommunities.map(c => c.name).join(', ')}
+                    >
+                      <Users className="w-3.5 h-3.5 text-indigo-400" />
+                      {mutualCommunities.length} máy chủ chung
+                    </button>
+                  ) : (
+                    <span className="px-3 py-1.5 rounded bg-[#2b2d31] text-xs text-[#949ba4] font-medium border border-[#1e1f22]">
+                      Không có máy chủ chung
+                    </span>
+                  )}
                   <button 
                     onClick={handleSendWave}
                     className="px-4 py-1.5 rounded bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer shadow-md"

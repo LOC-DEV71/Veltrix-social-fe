@@ -928,8 +928,8 @@ export default function AppLayout() {
         </div>
       </div>
 
-      {/* 🟡 CỘT 4: MEMBER LIST */}
-      {showMembers && (
+      {/* 🟡 CỘT 4: MEMBER LIST (Only when in community channels) */}
+      {showMembers && !location.pathname.startsWith('/dm/') && (
         <div className="w-[240px] bg-[#2b2d31] flex flex-col shrink-0 border-l border-[#1f2023]/30 h-full hidden lg:flex">
           <div className="flex-1 overflow-y-auto px-2 py-4 space-y-4 no-scrollbar">
             {!selectedCommunity ? (
