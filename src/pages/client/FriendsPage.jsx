@@ -169,7 +169,7 @@ export default function FriendsPage() {
   const incomingRequests = pendingRequests.filter(req => req.type === 'incoming');
   const outgoingRequests = pendingRequests.filter(req => req.type === 'outgoing');
   const communityInvites = friendsData.communityInvites || [];
-  const totalPending = incomingRequests.length + communityInvites.length;
+  const totalPending = incomingRequests.length + outgoingRequests.length + communityInvites.length;
 
   const renderFriendCard = (friend, isRequest = false, reqType = null) => {
     const avatarSrc = friend.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(friend.displayName || friend.username || 'User')}&background=2b2d31&color=fff`;
@@ -274,9 +274,11 @@ export default function FriendsPage() {
         <div className="flex items-center gap-4 text-sm font-medium">
           <button onClick={() => setActiveTab('online')} className={`px-2 py-1 rounded transition-colors ${activeTab === 'online' ? 'bg-[#3f4147] text-white' : 'hover:bg-[#35373c] hover:text-[#dbdee1]'}`}>Trực tuyến</button>
           <button onClick={() => setActiveTab('all')} className={`px-2 py-1 rounded transition-colors ${activeTab === 'all' ? 'bg-[#3f4147] text-white' : 'hover:bg-[#35373c] hover:text-[#dbdee1]'}`}>Tất cả</button>
-          <button onClick={() => setActiveTab('pending')} className={`px-2 py-1 rounded transition-colors ${activeTab === 'pending' ? 'bg-[#3f4147] text-white' : 'hover:bg-[#35373c] hover:text-[#dbdee1]'}`}>
-            Đang chờ {totalPending > 0 && <span className="ml-1 bg-rose-500 text-white text-[10px] px-1.5 rounded-full">{totalPending}</span>}
-          </button>
+          {totalPending > 0 && (
+            <button onClick={() => setActiveTab('pending')} className={`px-2 py-1 rounded transition-colors ${activeTab === 'pending' ? 'bg-[#3f4147] text-white' : 'hover:bg-[#35373c] hover:text-[#dbdee1]'}`}>
+              Đang chờ <span className="ml-1 bg-rose-500 text-white text-[10px] px-1.5 rounded-full">{totalPending}</span>
+            </button>
+          )}
           <button onClick={() => setActiveTab('add')} className={`px-2 py-1 rounded transition-colors ${activeTab === 'add' ? 'text-[#23a55a]' : 'bg-[#23a55a] text-white hover:bg-[#1a7f44]'}`}>Thêm bạn</button>
         </div>
       </div>
