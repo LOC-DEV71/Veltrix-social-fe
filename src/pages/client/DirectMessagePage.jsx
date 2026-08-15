@@ -311,6 +311,8 @@ export default function DirectMessagePage() {
                     <span className="px-3 py-1.5 rounded bg-[#2b2d31] text-xs text-[#949ba4] font-medium border border-[#1e1f22]">
                       Không có máy chủ chung
                     </span>
+                  )}
+
                   {(!messages || messages.length === 0) && (
                     <button 
                       onClick={handleSendWave}
