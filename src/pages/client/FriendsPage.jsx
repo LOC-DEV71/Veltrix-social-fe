@@ -6,6 +6,8 @@ import { io } from 'socket.io-client';
 import axiosClient from '../../services/axiosClient';
 import { useTitle } from '../../hooks/useTitle';
 
+import { API_BASE_URL } from '../../utils/config';
+
 export default function FriendsPage() {
   useTitle('Bạn bè');
   const user = useSelector((state) => state.auth.user);
@@ -21,7 +23,7 @@ export default function FriendsPage() {
     fetchFriendsData();
 
     // Init Socket for Realtime notifications
-    const newSocket = io(import.meta.env.VITE_API_URL || 'http://localhost:5000', {
+    const newSocket = io(API_BASE_URL, {
       withCredentials: true
     });
 

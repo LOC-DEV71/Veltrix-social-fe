@@ -35,7 +35,7 @@ export default function ChatPage() {
   const onlineUserIds = outletContext?.onlineUserIds || new Set();
   const handleSelectCommunity = outletContext?.handleSelectCommunity;
   const user = useSelector((state) => state.auth.user);
-  
+
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [socketConnected, setSocketConnected] = useState(false);
@@ -53,7 +53,7 @@ export default function ChatPage() {
   const [showExpressionPicker, setShowExpressionPicker] = useState(false);
   const expressionPickerRef = useRef(null);
   const [expressionTab, setExpressionTab] = useState('sticker');
-  
+
   const [channelInfo, setChannelInfo] = useState(null);
   const [nsfwConfirmed, setNsfwConfirmed] = useState(false);
   const [mentionPopup, setMentionPopup] = useState({ show: false, query: '', index: -1 });
@@ -101,7 +101,7 @@ export default function ChatPage() {
   useEffect(() => {
     if (!channelId || !communityId) return;
     setNsfwConfirmed(localStorage.getItem(`nsfw_${channelId}`) === 'true');
-    
+
     if (communityChannels && communityChannels.length > 0) {
       const ch = communityChannels.find(c => c._id === channelId);
       if (ch) setChannelInfo(ch);
@@ -122,7 +122,7 @@ export default function ChatPage() {
     setLoadingHistory(true);
     setMessages([]);
     setHasMore(true);
-    
+
     axiosClient.get(`/api/messages/${channelId}?limit=30`)
       .then(res => {
         if (res.data.status === 'success' && res.data.data) {
@@ -195,9 +195,9 @@ export default function ChatPage() {
       setGlobalPinnedMessages(prev => {
         const isCurrentlyPinned = prev.some(m => m._id === updatedMessage._id);
         if (updatedMessage.isPinned && !isCurrentlyPinned) {
-           return [...prev, updatedMessage];
+          return [...prev, updatedMessage];
         } else if (!updatedMessage.isPinned && isCurrentlyPinned) {
-           return prev.filter(m => m._id !== updatedMessage._id);
+          return prev.filter(m => m._id !== updatedMessage._id);
         }
         return prev.map((m) => (m._id === updatedMessage._id ? updatedMessage : m));
       });
@@ -260,12 +260,12 @@ export default function ChatPage() {
   const handleInputChange = (e) => {
     const val = e.target.value;
     setInputText(val);
-    
+
     // Check for mention trigger
     const cursor = e.target.selectionStart;
     const textBeforeCursor = val.slice(0, cursor);
     const lastAtMatch = textBeforeCursor.match(/@([a-zA-Z0-9_]*)$/);
-    
+
     if (lastAtMatch) {
       setMentionPopup({ show: true, query: lastAtMatch[1], index: lastAtMatch.index });
     } else {
@@ -273,7 +273,7 @@ export default function ChatPage() {
     }
 
     if (!socketRef.current || !user) return;
-    
+
     socketRef.current.emit('typing_start', {
       channelId,
       user: { _id: (user._id || user.id), username: user.displayName || user.username }
@@ -339,7 +339,7 @@ export default function ChatPage() {
 
   const loadMoreMessages = async () => {
     if (loadingMore || !hasMore || messages.length === 0) return;
-    
+
     setLoadingMore(true);
     const oldestMessage = messages[0];
     try {
@@ -347,18 +347,18 @@ export default function ChatPage() {
       if (res.data.status === 'success' && res.data.data) {
         const newMessages = res.data.data;
         if (newMessages.length < 30) setHasMore(false);
-        
+
         // Save current scroll position
         const container = chatFeedRef.current;
         const previousScrollHeight = container ? container.scrollHeight : 0;
-        
+
         setMessages(prev => {
           // Filter out duplicates
           const existingIds = new Set(prev.map(m => m._id));
           const uniqueNew = newMessages.filter(m => !existingIds.has(m._id));
           return [...uniqueNew, ...prev];
         });
-        
+
         // Restore scroll position
         setTimeout(() => {
           if (container) {
@@ -387,9 +387,9 @@ export default function ChatPage() {
         setGlobalPinnedMessages(prev => {
           const isCurrentlyPinned = prev.some(m => m._id === msgId);
           if (res.data.data.isPinned && !isCurrentlyPinned) {
-             return [...prev, res.data.data];
+            return [...prev, res.data.data];
           } else if (!res.data.data.isPinned && isCurrentlyPinned) {
-             return prev.filter(m => m._id !== msgId);
+            return prev.filter(m => m._id !== msgId);
           }
           return prev;
         });
@@ -445,7 +445,7 @@ export default function ChatPage() {
   const handleSendSticker = (stickerUrl) => {
     const activeCommunityId = communityId || selectedCommunity?._id;
     if (!socketRef.current || !(user?._id || user?.id)) return;
-    
+
     // --- SLOW MODE CHECK ---
     if (channelInfo?.slowMode > 0) {
       const now = Date.now();
@@ -456,7 +456,7 @@ export default function ChatPage() {
       }
       lastMessageTimeRef.current = now;
     }
-    
+
     const payload = {
       senderId: (user._id || user.id),
       content: '',
@@ -469,11 +469,11 @@ export default function ChatPage() {
       }],
       replyTo: replyingToMessage?._id || undefined
     };
-    
+
     socketRef.current.emit('send_message', payload);
     setShowExpressionPicker(false);
     setReplyingToMessage(null);
-    
+
     // Stop typing indicator
     socketRef.current.emit('typing_stop', {
       channelId,
@@ -507,7 +507,7 @@ export default function ChatPage() {
         url: URL.createObjectURL(f),
         name: f.name
       }));
-      
+
       const tempMessage = {
         _id: fakeId,
         sender: user,
@@ -518,7 +518,7 @@ export default function ChatPage() {
       };
 
       setMessages(prev => [...prev, tempMessage]);
-      
+
       // Save data for upload
       const currentFiles = [...selectedFiles];
       const currentText = inputText.trim();
@@ -557,16 +557,16 @@ export default function ChatPage() {
       socketRef.current.emit('send_message', payload);
       setInputText('');
     }
-    
+
     setReplyingToMessage(null);
-    
+
     // Stop typing indicator
     socketRef.current.emit('typing_stop', {
       channelId,
       user: { _id: (user._id || user.id) }
     });
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-    
+
     if (textareaRef.current) textareaRef.current.style.height = 'auto';
   };
 
@@ -602,7 +602,7 @@ export default function ChatPage() {
   const renderMessageContent = (content) => {
     if (!content) return null;
     const parts = content.split(/(@everyone|@[^\s]+)/g);
-    
+
     return parts.map((part, i) => {
       if (part === '@everyone') {
         return <span key={i} className="bg-indigo-500/40 text-indigo-200 font-bold px-1.5 py-0.5 rounded mx-[1px]">{part}</span>;
@@ -628,13 +628,13 @@ export default function ChatPage() {
             Kênh <strong className="text-white">#{channelName}</strong> chứa nội dung không dành cho người dưới 18 tuổi. Bằng cách tiếp tục, bạn xác nhận rằng bạn đã đủ tuổi theo quy định.
           </p>
           <div className="flex w-full gap-3">
-            <button 
+            <button
               onClick={() => navigate(-1)}
               className="flex-1 bg-[#4e5058] hover:bg-[#6d6f78] text-white px-4 py-2.5 rounded font-medium transition-colors flex items-center justify-center gap-2"
             >
               <ArrowLeft className="w-4 h-4" /> Quay lại
             </button>
-            <button 
+            <button
               onClick={() => {
                 localStorage.setItem(`nsfw_${channelId}`, 'true');
                 setNsfwConfirmed(true);
@@ -651,11 +651,11 @@ export default function ChatPage() {
 
   return (
     <div className="flex flex-col h-full bg-[#313338] text-[#dbdee1] overflow-hidden">
-      
+
       {/* Pinned Messages Banner */}
       {pinnedMessages.length > 0 && (
         <div className="relative z-20 shrink-0 bg-[#313338] border-b border-[#1f2023] shadow-sm">
-          <div 
+          <div
             className="flex items-center px-4 py-2.5 cursor-pointer hover:bg-[#2b2d31] transition-colors"
             onClick={() => setShowPinnedDropdown(!showPinnedDropdown)}
           >
@@ -675,15 +675,15 @@ export default function ChatPage() {
               <div className="fixed inset-0 z-10" onClick={() => setShowPinnedDropdown(false)} />
               <div className="absolute top-full left-0 right-0 max-h-[300px] bg-[#2b2d31] border-b border-[#1f2023] overflow-y-auto shadow-xl z-20">
                 {pinnedMessages.map(msg => (
-                  <div 
+                  <div
                     key={msg._id}
                     className="flex items-start px-4 py-3 hover:bg-[#1e1f22] cursor-pointer border-b border-[#1f2023] last:border-0 group transition-colors"
                     onClick={() => handleJumpToMessage(msg._id)}
                   >
-                    <img 
-                      src={msg.sender?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(msg.sender?.displayName || msg.sender?.username || 'V')}&background=5865f2&color=fff`} 
-                      alt="avatar" 
-                      className="w-8 h-8 rounded-full mr-3 shrink-0" 
+                    <img
+                      src={msg.sender?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(msg.sender?.displayName || msg.sender?.username || 'V')}&background=5865f2&color=fff`}
+                      alt="avatar"
+                      className="w-8 h-8 rounded-full mr-3 shrink-0"
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
@@ -695,7 +695,7 @@ export default function ChatPage() {
                       </p>
                     </div>
                     {/* Unpin button */}
-                    <button 
+                    <button
                       onClick={(e) => {
                         e.stopPropagation();
                         handleTogglePin(msg._id);
@@ -716,7 +716,7 @@ export default function ChatPage() {
 
       {/* Scrollable Chat Feed */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-0" ref={chatFeedRef} onScroll={handleScroll}>
-        
+
         {/* Loading more spinner */}
         {loadingMore && (
           <div className="flex items-center justify-center py-4">
@@ -750,23 +750,22 @@ export default function ChatPage() {
         {messages.map((msg, idx) => {
           const sender = msg.sender || {};
           const showHeader = shouldShowHeader(msg, idx);
-          
+
           const serverMember = communityMembers?.find(m => String(m.user?._id || m.user) === String(sender._id || sender.id));
           const senderDisplayName = serverMember?.nickname || sender.displayName || sender.username || 'Vô danh';
           const senderAvatar = serverMember?.avatar || sender.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(senderDisplayName)}&background=5865f2&color=fff`;
-          
+
           // Frame info
           const activeFrame = sender.activeFrame;
           const frameStaticUrl = sender.activeFrameStaticUrl || (typeof activeFrame === 'object' ? activeFrame?.staticUrl : null);
           const frameAnimatedUrl = sender.activeFrameAnimatedUrl || (typeof activeFrame === 'object' ? activeFrame?.animatedUrl : null);
 
           return (
-            <div 
+            <div
               id={`message-${msg._id}`}
               key={msg._id}
-              className={`flex items-start group hover:bg-[#2e3035]/50 -mx-4 px-4 py-0.5 transition-all duration-300 relative ${
-                showHeader ? 'mt-[17px]' : 'mt-0'
-              } ${highlightedMsgId === msg._id ? 'bg-amber-500/15' : ''}`}
+              className={`flex items-start group hover:bg-[#2e3035]/50 -mx-4 px-4 py-0.5 transition-all duration-300 relative ${showHeader ? 'mt-[17px]' : 'mt-0'
+                } ${highlightedMsgId === msg._id ? 'bg-amber-500/15' : ''}`}
               onMouseEnter={() => setHoveredMessageId(msg._id)}
               onMouseLeave={() => setHoveredMessageId(null)}
             >
@@ -774,7 +773,7 @@ export default function ChatPage() {
               {(hoveredMessageId === msg._id || reactionPickerMsgId === msg._id) && !msg.isTemp && (
                 <div className="absolute right-4 -top-4 bg-[#313338] border border-[#1f2023] rounded shadow-sm flex items-center p-0.5 z-10">
                   {canAddReactions && (
-                    <div 
+                    <div
                       className={`p-1.5 hover:text-[#dbdee1] hover:bg-[#404249] rounded cursor-pointer transition-colors ${reactionPickerMsgId === msg._id ? 'text-[#dbdee1] bg-[#404249]' : 'text-[#b5bac1]'}`}
                       title="Thêm Biểu Cảm"
                       onClick={() => setReactionPickerMsgId(reactionPickerMsgId === msg._id ? null : msg._id)}
@@ -783,16 +782,16 @@ export default function ChatPage() {
                     </div>
                   )}
                   {String(sender._id || sender) === String(user?._id || user?.id) && canSendMessage && (
-                    <div 
-                      className="p-1.5 text-[#b5bac1] hover:text-[#dbdee1] hover:bg-[#404249] rounded cursor-pointer transition-colors" 
+                    <div
+                      className="p-1.5 text-[#b5bac1] hover:text-[#dbdee1] hover:bg-[#404249] rounded cursor-pointer transition-colors"
                       title="Chỉnh Sửa"
                       onClick={() => handleStartEdit(msg)}
                     >
                       <Pencil className="w-[18px] h-[18px]" />
                     </div>
                   )}
-                  <div 
-                    className="p-1.5 text-[#b5bac1] hover:text-[#dbdee1] hover:bg-[#404249] rounded cursor-pointer transition-colors" 
+                  <div
+                    className="p-1.5 text-[#b5bac1] hover:text-[#dbdee1] hover:bg-[#404249] rounded cursor-pointer transition-colors"
                     title="Thêm"
                     onClick={(e) => {
                       const rect = e.currentTarget.getBoundingClientRect();
@@ -834,7 +833,7 @@ export default function ChatPage() {
               {/* Avatar column */}
               <div className="w-10 mr-4 shrink-0 flex justify-center">
                 {showHeader ? (
-                  <div 
+                  <div
                     className="relative w-10 h-10 rounded-full group/avatar cursor-pointer"
                     onClick={(e) => {
                       const rect = e.currentTarget.getBoundingClientRect();
@@ -853,22 +852,22 @@ export default function ChatPage() {
                     }}
                   >
                     <div className="w-full h-full rounded-full overflow-hidden bg-[#313338]">
-                      <img 
-                        src={senderAvatar} 
-                        alt={sender.username || 'User'} 
+                      <img
+                        src={senderAvatar}
+                        alt={sender.username || 'User'}
                         className="w-full h-full object-cover"
                       />
                     </div>
                     {frameAnimatedUrl && (
                       <div className="absolute -inset-[15%] pointer-events-none z-10">
-                        <img 
+                        <img
                           src={frameStaticUrl || frameAnimatedUrl}
-                          alt="" 
+                          alt=""
                           className="w-full h-full object-contain group-hover/avatar:hidden"
                         />
-                        <img 
+                        <img
                           src={frameAnimatedUrl}
-                          alt="" 
+                          alt=""
                           className="w-full h-full object-contain absolute inset-0 hidden group-hover/avatar:block"
                         />
                       </div>
@@ -884,8 +883,8 @@ export default function ChatPage() {
               {/* Message content */}
               <div className="flex-1 min-w-0">
                 {msg.replyTo && (
-                  <div 
-                    className="flex items-center gap-1.5 mb-1 mt-0.5 text-[13px] text-[#b5bac1] opacity-80 hover:opacity-100 cursor-pointer select-none relative" 
+                  <div
+                    className="flex items-center gap-1.5 mb-1 mt-0.5 text-[13px] text-[#b5bac1] opacity-80 hover:opacity-100 cursor-pointer select-none relative"
                     onClick={() => handleJumpToMessage(msg.replyTo._id)}
                   >
                     <div className="absolute -left-[30px] top-1/2 w-6 h-6 border-l-2 border-t-2 border-[#4f545c] rounded-tl-lg -mt-3" />
@@ -896,9 +895,9 @@ export default function ChatPage() {
                       const replySenderAvatar = replyServerMember?.avatar || replySender.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(replySenderName)}&background=313338&color=fff`;
                       return (
                         <>
-                          <img 
+                          <img
                             src={replySenderAvatar}
-                            alt="avatar" 
+                            alt="avatar"
                             className="w-4 h-4 rounded-full shrink-0 relative z-10"
                           />
                           <span className="font-semibold text-[#dbdee1] hover:underline shrink-0 relative z-10">
@@ -914,10 +913,9 @@ export default function ChatPage() {
                 )}
                 {showHeader && (
                   <div className="flex items-baseline gap-2">
-                    <span 
-                      className={`text-[15px] font-medium cursor-pointer hover:underline ${
-                        sender.isPremium ? 'text-[#f47fff]' : 'text-white'
-                      }`}
+                    <span
+                      className={`text-[15px] font-medium cursor-pointer hover:underline ${sender.isPremium ? 'text-[#f47fff]' : 'text-white'
+                        }`}
                       onClick={(e) => {
                         const rect = e.currentTarget.getBoundingClientRect();
                         const cMember = communityMembers.find(m => m.user?._id === (sender._id || sender.id));
@@ -937,7 +935,7 @@ export default function ChatPage() {
                       {senderDisplayName}
                     </span>
                     {sender.isPremium && <Sparkles className="w-3.5 h-3.5 text-[#f47fff] shrink-0 self-center" />}
-                    
+
                     {selectedCommunity?.boost2 && (selectedCommunity.serverTag || selectedCommunity.serverBadge) && (
                       <div className="flex items-center gap-1 bg-[#2b2d31] px-1.5 py-[1px] rounded text-[10px] text-[#b5bac1] shrink-0 border border-[#1f2023]/50 self-center">
                         {selectedCommunity.serverBadge && (
@@ -995,10 +993,10 @@ export default function ChatPage() {
                     <div className="flex flex-wrap gap-2 mt-1">
                       {msg.attachments.map((att, i) => (
                         <div key={i} className={`relative ${msg.isTemp ? 'opacity-60' : ''}`}>
-                          <img 
-                            src={att.url} 
-                            alt={att.name || 'attachment'} 
-                            className="max-w-[400px] max-h-[300px] rounded-md object-contain bg-[#2b2d31] border border-[#1f2023]" 
+                          <img
+                            src={att.url}
+                            alt={att.name || 'attachment'}
+                            className="max-w-[400px] max-h-[300px] rounded-md object-contain bg-[#2b2d31] border border-[#1f2023]"
                           />
                           {msg.isTemp && (
                             <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-md">
@@ -1027,11 +1025,10 @@ export default function ChatPage() {
                           <div key={rIdx} className="relative group/reaction">
                             <button
                               onClick={() => handleToggleReaction(msg._id, reaction.emoji)}
-                              className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[13px] border transition-colors ${
-                                iReacted 
-                                  ? 'bg-[#5865F2]/20 border-[#5865F2]/50 text-[#dee0fc]' 
+                              className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[13px] border transition-colors ${iReacted
+                                  ? 'bg-[#5865F2]/20 border-[#5865F2]/50 text-[#dee0fc]'
                                   : 'bg-[#2b2d31] border-[#1f2023] text-[#b5bac1] hover:border-[#949ba4]'
-                              }`}
+                                }`}
                             >
                               <span>{reaction.emoji}</span>
                               <span className="text-[11px] font-medium min-w-[12px] text-center">{reaction.users?.length || 0}</span>
@@ -1113,9 +1110,9 @@ export default function ChatPage() {
               {selectedFiles.map((file, i) => (
                 <div key={i} className="relative shrink-0 w-[200px] h-[200px] bg-[#2b2d31] rounded-md p-2 group">
                   <img src={URL.createObjectURL(file)} className="w-full h-full object-contain rounded" alt="preview" />
-                  <button 
-                    type="button" 
-                    onClick={() => removeFile(i)} 
+                  <button
+                    type="button"
+                    onClick={() => removeFile(i)}
                     className="absolute -top-2 -right-2 w-7 h-7 bg-[#f23f42] rounded-full flex items-center justify-center shadow-md hover:bg-[#da373c] transition-colors text-white"
                   >
                     <X className="w-4 h-4" />
@@ -1134,7 +1131,7 @@ export default function ChatPage() {
               <div className="max-h-48 overflow-y-auto p-1 no-scrollbar">
                 {(() => {
                   const query = mentionPopup.query.toLowerCase();
-                  
+
                   // Filter members based on query
                   const filteredMembers = communityMembers.filter(m => {
                     if (!m.user || typeof m.user !== 'object') return false;
@@ -1151,8 +1148,8 @@ export default function ChatPage() {
                   const options = [];
                   if (showEveryone) {
                     options.push(
-                      <div 
-                        key="everyone" 
+                      <div
+                        key="everyone"
                         onClick={() => {
                           const newText = inputText.substring(0, mentionPopup.index) + '@everyone ' + inputText.substring(mentionPopup.index + mentionPopup.query.length + 1);
                           setInputText(newText);
@@ -1174,8 +1171,8 @@ export default function ChatPage() {
                     const u = m.user;
                     const avatarUrl = u.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.displayName || u.username || 'V')}&background=5865f2&color=fff`;
                     options.push(
-                      <div 
-                        key={u._id || idx} 
+                      <div
+                        key={u._id || idx}
                         onClick={() => {
                           const nameToInsert = u.displayName || u.username;
                           const formattedName = nameToInsert.replace(/\s+/g, '');
@@ -1200,18 +1197,18 @@ export default function ChatPage() {
               </div>
             </div>
           )}
-          
+
           {/* Files Preview Container */}
           {selectedFiles.length > 0 && (
             <div className="bg-[#2b2d31] rounded-t-lg p-4 border border-[#1f2023] border-b-0 flex gap-4 overflow-x-auto">
               {selectedFiles.map((file, index) => (
                 <div key={index} className="relative w-24 h-24 bg-[#1e1f22] rounded flex items-center justify-center group shrink-0">
-                  <img 
-                    src={URL.createObjectURL(file)} 
-                    alt="preview" 
+                  <img
+                    src={URL.createObjectURL(file)}
+                    alt="preview"
                     className="w-full h-full object-cover rounded opacity-80 group-hover:opacity-100 transition-opacity"
                   />
-                  <button 
+                  <button
                     type="button"
                     onClick={() => removeFile(index)}
                     className="absolute -top-2 -right-2 bg-rose-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:scale-110"
@@ -1231,118 +1228,117 @@ export default function ChatPage() {
               </div>
             )}
             <div className={`bg-[#383a40] ${selectedFiles.length > 0 ? 'rounded-b-lg' : 'rounded-lg'} flex items-start px-2 relative min-h-[44px]`}>
-            {!canSendMessage ? (
-              <div className="flex-1 py-[12px] px-2 text-[#949ba4] text-[15px] font-medium flex items-center justify-center">
-                Bạn không có quyền gửi tin nhắn trong kênh này.
-              </div>
-            ) : (
-              <>
-                <button 
-                  type="button" 
-                  onClick={() => fileInputRef.current?.click()}
-                  className={`${canAttachFiles ? 'text-[#b5bac1] hover:text-white cursor-pointer' : 'text-[#4e5058] cursor-not-allowed'} transition-all mb-[10px] mr-2 shrink-0 self-end pb-1.5`}
-                  disabled={isUploading || !canAttachFiles}
-                >
-                  <PlusCircle className="w-6 h-6" />
-                </button>
-                <input 
-                  type="file" 
-                  ref={fileInputRef} 
-                  onChange={handleFileChange} 
-                  className="hidden" 
-                  multiple 
-                  accept="image/*,video/*" 
-                  disabled={!canAttachFiles}
-                />
-                
-                <textarea 
-                  ref={textareaRef}
-                  value={inputText}
-                  onChange={(e) => {
-                    handleInputChange(e);
-                    // Auto resize
-                    const el = textareaRef.current;
-                    if (el) {
-                      el.style.height = 'auto';
-                      el.style.height = Math.min(el.scrollHeight, 200) + 'px';
-                    }
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSendMessage(e);
-                    }
-                  }}
-                  placeholder={`Nhắn #${channelName}`}
-                  className="flex-1 bg-transparent text-[#dbdee1] placeholder-[#6d6f78] text-[15px] focus:outline-none py-[12px] resize-none max-h-[200px] leading-[1.375rem]"
-                  rows={1}
-                  disabled={isUploading}
-                />
-
-                <div className="flex items-center gap-2 text-[#b5bac1] ml-2 shrink-0 self-end pb-2">
-                  <button type="button" onClick={() => fileInputRef.current?.click()} className="hover:text-white transition-all cursor-pointer" title="Hình ảnh">
-                    <ImageIcon className="w-[22px] h-[22px]" />
-                  </button>
-
-                  <div className="relative flex items-center gap-2" ref={expressionPickerRef}>
-                    <button 
-                      type="button" 
-                      onClick={() => {
-                        if (showExpressionPicker && expressionTab === 'sticker') {
-                          setShowExpressionPicker(false);
-                        } else {
-                          setExpressionTab('sticker');
-                          setShowExpressionPicker(true);
-                        }
-                      }} 
-                      className={`transition-all cursor-pointer ${showExpressionPicker && expressionTab === 'sticker' ? 'text-[#f2f3f5]' : 'hover:text-white'}`} 
-                      title="Sticker"
-                    >
-                      <Sticker className="w-[22px] h-[22px]" />
-                    </button>
-                    <button 
-                      type="button" 
-                      onClick={() => {
-                        if (showExpressionPicker && expressionTab === 'emoji') {
-                          setShowExpressionPicker(false);
-                        } else {
-                          setExpressionTab('emoji');
-                          setShowExpressionPicker(true);
-                        }
-                      }} 
-                      className={`transition-all cursor-pointer ${showExpressionPicker && expressionTab === 'emoji' ? 'text-[#f2f3f5]' : 'hover:text-white'}`} 
-                      title="Biểu cảm"
-                    >
-                      <Smile className="w-[22px] h-[22px]" />
-                    </button>
-                    
-                    {showExpressionPicker && (
-                      <ExpressionPicker 
-                        initialTab={expressionTab}
-                        onEmojiClick={onEmojiClick}
-                        onStickerClick={handleSendSticker}
-                        user={user}
-                        community={selectedCommunity}
-                        communities={myCommunities}
-                      />
-                    )}
-                  </div>
-
-                  <button 
-                    type="submit" 
-                    className={`transition-all cursor-pointer ${
-                      (inputText.trim() || selectedFiles.length > 0) ? 'text-[#5865F2] hover:text-[#4752c4]' : 'text-[#5865F2]/30 cursor-default'
-                    }`}
-                    title="Gửi tin nhắn"
-                    disabled={(!inputText.trim() && selectedFiles.length === 0) || isUploading}
-                  >
-                    {isUploading ? <Loader2 className="w-[22px] h-[22px] animate-spin text-[#5865F2]" /> : <Navigation className="w-[22px] h-[22px]" />}
-                  </button>
+              {!canSendMessage ? (
+                <div className="flex-1 py-[12px] px-2 text-[#949ba4] text-[15px] font-medium flex items-center justify-center">
+                  Bạn không có quyền gửi tin nhắn trong kênh này.
                 </div>
-              </>
-            )}
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className={`${canAttachFiles ? 'text-[#b5bac1] hover:text-white cursor-pointer' : 'text-[#4e5058] cursor-not-allowed'} transition-all mb-[10px] mr-2 shrink-0 self-end pb-1.5`}
+                    disabled={isUploading || !canAttachFiles}
+                  >
+                    <PlusCircle className="w-6 h-6" />
+                  </button>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    className="hidden"
+                    multiple
+                    accept="image/*,video/*"
+                    disabled={!canAttachFiles}
+                  />
+
+                  <textarea
+                    ref={textareaRef}
+                    value={inputText}
+                    onChange={(e) => {
+                      handleInputChange(e);
+                      // Auto resize
+                      const el = textareaRef.current;
+                      if (el) {
+                        el.style.height = 'auto';
+                        el.style.height = Math.min(el.scrollHeight, 200) + 'px';
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendMessage(e);
+                      }
+                    }}
+                    placeholder={`Nhắn #${channelName}`}
+                    className="flex-1 bg-transparent text-[#dbdee1] placeholder-[#6d6f78] text-[15px] focus:outline-none py-[12px] resize-none max-h-[200px] leading-[1.375rem]"
+                    rows={1}
+                    disabled={isUploading}
+                  />
+
+                  <div className="flex items-center gap-2 text-[#b5bac1] ml-2 shrink-0 self-end pb-2">
+                    <button type="button" onClick={() => fileInputRef.current?.click()} className="hover:text-white transition-all cursor-pointer" title="Hình ảnh">
+                      <ImageIcon className="w-[22px] h-[22px]" />
+                    </button>
+
+                    <div className="relative flex items-center gap-2" ref={expressionPickerRef}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (showExpressionPicker && expressionTab === 'sticker') {
+                            setShowExpressionPicker(false);
+                          } else {
+                            setExpressionTab('sticker');
+                            setShowExpressionPicker(true);
+                          }
+                        }}
+                        className={`transition-all cursor-pointer ${showExpressionPicker && expressionTab === 'sticker' ? 'text-[#f2f3f5]' : 'hover:text-white'}`}
+                        title="Sticker"
+                      >
+                        <Sticker className="w-[22px] h-[22px]" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (showExpressionPicker && expressionTab === 'emoji') {
+                            setShowExpressionPicker(false);
+                          } else {
+                            setExpressionTab('emoji');
+                            setShowExpressionPicker(true);
+                          }
+                        }}
+                        className={`transition-all cursor-pointer ${showExpressionPicker && expressionTab === 'emoji' ? 'text-[#f2f3f5]' : 'hover:text-white'}`}
+                        title="Biểu cảm"
+                      >
+                        <Smile className="w-[22px] h-[22px]" />
+                      </button>
+
+                      {showExpressionPicker && (
+                        <ExpressionPicker
+                          initialTab={expressionTab}
+                          onEmojiClick={onEmojiClick}
+                          onStickerClick={handleSendSticker}
+                          user={user}
+                          community={selectedCommunity}
+                          communities={myCommunities}
+                        />
+                      )}
+                    </div>
+
+                    <button
+                      type="submit"
+                      className={`transition-all cursor-pointer ${(inputText.trim() || selectedFiles.length > 0) ? 'text-[#5865F2] hover:text-[#4752c4]' : 'text-[#5865F2]/30 cursor-default'
+                        }`}
+                      title="Gửi tin nhắn"
+                      disabled={(!inputText.trim() && selectedFiles.length === 0) || isUploading}
+                    >
+                      {isUploading ? <Loader2 className="w-[22px] h-[22px] animate-spin text-[#5865F2]" /> : <Navigation className="w-[22px] h-[22px]" />}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
-        </div>
         </form>
       </div>
 
@@ -1365,11 +1361,10 @@ export default function ChatPage() {
                   <button
                     key={rIdx}
                     onClick={() => setReactionDetailModal(prev => ({ ...prev, selectedEmoji: reaction.emoji }))}
-                    className={`w-full flex items-center gap-2 px-3 py-2 text-left transition-colors ${
-                      reactionDetailModal.selectedEmoji === reaction.emoji
+                    className={`w-full flex items-center gap-2 px-3 py-2 text-left transition-colors ${reactionDetailModal.selectedEmoji === reaction.emoji
                         ? 'bg-[#404249] text-white'
                         : 'text-[#b5bac1] hover:bg-[#35373c] hover:text-[#dbdee1]'
-                    }`}
+                      }`}
                   >
                     <span className="text-lg">{reaction.emoji}</span>
                     <span className="text-sm font-semibold">{reaction.users?.length || 0}</span>
@@ -1386,8 +1381,8 @@ export default function ChatPage() {
                   return selectedReaction.users.map((u, uIdx) => {
                     const avatar = u.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.displayName || u.username || 'U')}&background=5865f2&color=fff`;
                     return (
-                      <div 
-                        key={uIdx} 
+                      <div
+                        key={uIdx}
                         className="flex items-center gap-3 px-2 py-2 rounded-md hover:bg-[#2b2d31] transition-colors cursor-pointer"
                         onClick={(e) => {
                           const rect = e.currentTarget.getBoundingClientRect();
@@ -1418,27 +1413,27 @@ export default function ChatPage() {
         if (!dropdownMessageId) return null;
         const activeDropdownMsg = messages.find(m => m._id === dropdownMessageId);
         if (!activeDropdownMsg) return null;
-        
+
         return (
           <>
-            <div 
-              className="fixed inset-0 z-[100]" 
-              onClick={(e) => { e.stopPropagation(); setDropdownMessageId(null); }} 
-              onContextMenu={(e) => { e.preventDefault(); setDropdownMessageId(null); }} 
+            <div
+              className="fixed inset-0 z-[100]"
+              onClick={(e) => { e.stopPropagation(); setDropdownMessageId(null); }}
+              onContextMenu={(e) => { e.preventDefault(); setDropdownMessageId(null); }}
             />
-            <div 
+            <div
               className="fixed z-[101] bg-[#111214] border border-[#1f2023] rounded shadow-2xl flex flex-col p-2 w-[280px] text-[#b5bac1] text-[13px] font-medium"
               style={{ top: dropdownPos.top, right: dropdownPos.right }}
             >
               {/* Quick reactions */}
               <div className="flex justify-between px-1 py-1 mb-1">
-                 <div className="hover:bg-[#35373c] p-2 rounded cursor-pointer transition-colors text-lg" onClick={() => { handleToggleReaction(activeDropdownMsg._id, '😭'); setDropdownMessageId(null); }}>😭</div>
-                 <div className="hover:bg-[#35373c] p-2 rounded cursor-pointer transition-colors text-lg" onClick={() => { handleToggleReaction(activeDropdownMsg._id, '🇷🇺'); setDropdownMessageId(null); }}>🇷🇺</div>
-                 <div className="hover:bg-[#35373c] p-2 rounded cursor-pointer transition-colors text-lg" onClick={() => { handleToggleReaction(activeDropdownMsg._id, '🤣'); setDropdownMessageId(null); }}>🤣</div>
-                 <div className="hover:bg-[#35373c] p-2 rounded cursor-pointer transition-colors text-lg" onClick={() => { handleToggleReaction(activeDropdownMsg._id, '☝️'); setDropdownMessageId(null); }}>☝️</div>
+                <div className="hover:bg-[#35373c] p-2 rounded cursor-pointer transition-colors text-lg" onClick={() => { handleToggleReaction(activeDropdownMsg._id, '😭'); setDropdownMessageId(null); }}>😭</div>
+                <div className="hover:bg-[#35373c] p-2 rounded cursor-pointer transition-colors text-lg" onClick={() => { handleToggleReaction(activeDropdownMsg._id, '🇷🇺'); setDropdownMessageId(null); }}>🇷🇺</div>
+                <div className="hover:bg-[#35373c] p-2 rounded cursor-pointer transition-colors text-lg" onClick={() => { handleToggleReaction(activeDropdownMsg._id, '🤣'); setDropdownMessageId(null); }}>🤣</div>
+                <div className="hover:bg-[#35373c] p-2 rounded cursor-pointer transition-colors text-lg" onClick={() => { handleToggleReaction(activeDropdownMsg._id, '☝️'); setDropdownMessageId(null); }}>☝️</div>
               </div>
-              
-              <div 
+
+              <div
                 className="flex items-center justify-between px-2 py-1.5 rounded hover:bg-[#5865F2] hover:text-white cursor-pointer group transition-colors"
                 onClick={() => { setReactionPickerMsgId(activeDropdownMsg._id); setDropdownMessageId(null); }}
               >
@@ -1446,7 +1441,7 @@ export default function ChatPage() {
                 <ChevronRight className="w-4 h-4" />
               </div>
 
-              <div 
+              <div
                 className="flex items-center justify-between px-2 py-1.5 rounded hover:bg-[#5865F2] hover:text-white cursor-pointer group transition-colors"
                 onClick={() => {
                   if (activeDropdownMsg.reactions && activeDropdownMsg.reactions.length > 0) {
@@ -1464,7 +1459,7 @@ export default function ChatPage() {
               <div className="h-[1px] bg-[#1f2023] my-1 mx-1" />
 
               {String(activeDropdownMsg.sender?._id || activeDropdownMsg.sender) === String(user?._id || user?.id) && canSendMessage && (
-                <div 
+                <div
                   className="flex items-center justify-between px-2 py-1.5 rounded hover:bg-[#5865F2] hover:text-white cursor-pointer group transition-colors"
                   onClick={() => { handleStartEdit(activeDropdownMsg); setDropdownMessageId(null); }}
                 >
@@ -1472,24 +1467,24 @@ export default function ChatPage() {
                   <Pencil className="w-4 h-4" />
                 </div>
               )}
-              
-              <div 
+
+              <div
                 className="flex items-center justify-between px-2 py-1.5 rounded hover:bg-[#5865F2] hover:text-white cursor-pointer group transition-colors"
                 onClick={() => { setReplyingToMessage(activeDropdownMsg); setDropdownMessageId(null); }}
               >
                 <span>Trả lời</span>
                 <CornerUpLeft className="w-4 h-4" />
               </div>
-              
-              <div 
+
+              <div
                 className="flex items-center justify-between px-2 py-1.5 rounded hover:bg-[#5865F2] hover:text-white cursor-pointer group transition-colors"
                 onClick={() => { setForwardingMessage(activeDropdownMsg); setDropdownMessageId(null); }}
               >
                 <span>Chuyển tiếp</span>
                 <CornerUpRight className="w-4 h-4" />
               </div>
-              
-              <div 
+
+              <div
                 className="flex items-center justify-between px-2 py-1.5 rounded hover:bg-[#5865F2] hover:text-white cursor-pointer group transition-colors"
                 onClick={() => { alert('Tính năng Tạo chủ đề đang phát triển!'); setDropdownMessageId(null); }}
               >
@@ -1499,7 +1494,7 @@ export default function ChatPage() {
 
               <div className="h-[1px] bg-[#1f2023] my-1 mx-1" />
 
-              <div 
+              <div
                 className="flex items-center justify-between px-2 py-1.5 rounded hover:bg-[#5865F2] hover:text-white cursor-pointer group transition-colors"
                 onClick={() => { navigator.clipboard.writeText(activeDropdownMsg.content); setDropdownMessageId(null); }}
               >
@@ -1507,7 +1502,7 @@ export default function ChatPage() {
                 <Copy className="w-4 h-4" />
               </div>
 
-              <div 
+              <div
                 className="flex items-center justify-between px-2 py-1.5 rounded hover:bg-[#5865F2] hover:text-white cursor-pointer group transition-colors"
                 onClick={() => {
                   if (canManageMessages) {
@@ -1520,8 +1515,8 @@ export default function ChatPage() {
                 <span>{activeDropdownMsg.isPinned ? 'Bỏ ghim tin nhắn' : 'Ghim tin nhắn'}</span>
                 <Pin className="w-4 h-4" />
               </div>
-              
-              <div 
+
+              <div
                 className="flex items-center justify-between px-2 py-1.5 rounded hover:bg-[#5865F2] hover:text-white cursor-pointer group transition-colors"
                 onClick={() => { alert('Tính năng Đánh dấu tin nhắn đang phát triển!'); setDropdownMessageId(null); }}
               >
@@ -1529,7 +1524,7 @@ export default function ChatPage() {
                 <CheckCircle2 className="w-4 h-4" />
               </div>
 
-              <div 
+              <div
                 className="flex items-center justify-between px-2 py-1.5 rounded hover:bg-[#5865F2] hover:text-white cursor-pointer group transition-colors text-[#b5bac1]/70"
                 onClick={() => { alert('Tính năng Ứng dụng đang phát triển!'); setDropdownMessageId(null); }}
               >
@@ -1537,7 +1532,7 @@ export default function ChatPage() {
                 <ChevronRight className="w-4 h-4" />
               </div>
 
-              <div 
+              <div
                 className="flex items-center justify-between px-2 py-1.5 rounded hover:bg-[#5865F2] hover:text-white cursor-pointer group transition-colors"
                 onClick={() => { alert('Tính năng Đánh dấu chưa đọc đang phát triển!'); setDropdownMessageId(null); }}
               >
@@ -1545,7 +1540,7 @@ export default function ChatPage() {
                 <Mail className="w-4 h-4" />
               </div>
 
-              <div 
+              <div
                 className="flex items-center justify-between px-2 py-1.5 rounded hover:bg-[#5865F2] hover:text-white cursor-pointer group transition-colors"
                 onClick={() => {
                   const url = `${window.location.origin}/community/${communityId}/channel/${channelId}?message=${activeDropdownMsg._id}`;
@@ -1557,7 +1552,7 @@ export default function ChatPage() {
                 <LinkIcon className="w-4 h-4" />
               </div>
 
-              <div 
+              <div
                 className="flex items-center justify-between px-2 py-1.5 rounded hover:bg-[#5865F2] hover:text-white cursor-pointer group transition-colors"
                 onClick={() => {
                   const u = new SpeechSynthesisUtterance(activeDropdownMsg.content);
@@ -1572,7 +1567,7 @@ export default function ChatPage() {
 
               <div className="h-[1px] bg-[#1f2023] my-1 mx-1" />
 
-              <div 
+              <div
                 className="flex items-center justify-between px-2 py-1.5 rounded hover:bg-rose-500 hover:text-white cursor-pointer group transition-colors text-rose-500"
                 onClick={() => {
                   if (activeDropdownMsg.reactions) {
@@ -1589,7 +1584,7 @@ export default function ChatPage() {
                 <ChevronRight className="w-4 h-4" />
               </div>
 
-              <div 
+              <div
                 className="flex items-center justify-between px-2 py-1.5 rounded hover:bg-rose-500 hover:text-white cursor-pointer group transition-colors text-rose-500"
                 onClick={() => { alert('Tính năng Loại bỏ tất cả biểu cảm đang phát triển!'); setDropdownMessageId(null); }}
               >
@@ -1597,7 +1592,7 @@ export default function ChatPage() {
               </div>
 
               {(String(activeDropdownMsg.sender?._id || activeDropdownMsg.sender) === String(user?._id || user?.id) || canManageMessages) && (
-                <div 
+                <div
                   className="flex items-center justify-between px-2 py-1.5 rounded bg-[#da373c]/10 text-rose-500 hover:bg-rose-500 hover:text-white cursor-pointer group transition-colors mt-1"
                   onClick={() => { handleDeleteMessage(activeDropdownMsg._id); setDropdownMessageId(null); }}
                 >
@@ -1605,7 +1600,7 @@ export default function ChatPage() {
                   <Trash2 className="w-4 h-4" />
                 </div>
               )}
-           </div>
+            </div>
           </>
         );
       })()}

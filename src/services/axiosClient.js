@@ -1,8 +1,9 @@
 import axios from 'axios';
+import { API_BASE_URL } from '../utils/config';
 
 // Create a unified Axios instance with withCredentials enabled for HttpOnly cookies
 const axiosClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000',
+  baseURL: API_BASE_URL,
   withCredentials: true // Crucial: Allows browser to automatically send and receive credentials cookies
 });
 

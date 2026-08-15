@@ -3,6 +3,7 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout as reduxLogout } from '../redux/slices/authSlice';
 import axiosClient from '../services/axiosClient';
+import { API_BASE_URL } from '../utils/config';
 import { 
   Hash, 
   Volume2, 
@@ -207,7 +208,7 @@ export default function AppLayout() {
   useEffect(() => {
     if (!user?._id) return;
 
-    const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:5000', {
+    const socket = io(API_BASE_URL, {
       auth: { token: localStorage.getItem('token') }
     });
 
