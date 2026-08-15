@@ -97,10 +97,62 @@ export default function ChatPage() {
     scrollToBottom();
   }, [messages, scrollToBottom]);
 
+  // Sync channelInfo & nsfwConfirmed
+  useEffect(() => {
+    if (!channelId || !communityId) return;
+    setNsfwConfirmed(localStorage.getItem(`nsfw_${channelId}`) === 'true');
+    
+    if (communityChannels && communityChannels.length > 0) {
+      const ch = communityChannels.find(c => c._id === channelId);
+      if (ch) setChannelInfo(ch);
+    } else {
+      axiosClient.get(`/api/communities/${communityId}/channels`)
+        .then(res => {
+          const data = res.data?.data || [];
+          const ch = data.find(c => c._id === channelId);
+          if (ch) setChannelInfo(ch);
+        })
+        .catch(err => console.error(err));
+    }
+  }, [channelId, communityId, communityChannels]);
+
+  // Load message history from API whenever channelId changes
+  useEffect(() => {
+    if (!channelId) return;
+    setLoadingHistory(true);
+    setMessages([]);
+    setHasMore(true);
+    
+    axiosClient.get(`/api/messages/${channelId}?limit=30`)
+      .then(res => {
+        if (res.data.status === 'success' && res.data.data) {
+          setMessages(res.data.data);
+          if (res.data.data.length < 30) setHasMore(false);
+        }
+      })
+      .catch(err => {
+        console.warn('⚠️ Failed to load message history:', err.message);
+      })
+      .finally(() => {
+        setLoadingHistory(false);
+      });
+
+    // Load pinned messages
+    axiosClient.get(`/api/messages/${channelId}?pinned=true`)
+      .then(res => {
+        if (res.data.status === 'success' && res.data.data) {
+          setGlobalPinnedMessages(res.data.data);
+        }
+      })
+      .catch(err => {
+        console.warn('⚠️ Failed to load pinned messages:', err.message);
+      });
+  }, [channelId]);
+
   // Socket connection & channel management
   useEffect(() => {
-    if (!channelId || !user?._id || !channelInfo) return;
-    if (channelInfo.nsfw && !nsfwConfirmed) return; // Wait for confirmation
+    if (!channelId || !user?._id) return;
+    if (channelInfo && channelInfo.nsfw && !nsfwConfirmed) return; // Wait for confirmation
 
     if (!socketRef.current) {
       socketRef.current = io(import.meta.env.VITE_API_URL || 'http://localhost:5000', {
@@ -162,7 +214,6 @@ export default function ChatPage() {
         if (prev.some(u => u._id === typingUser._id)) return prev;
         return [...prev, typingUser];
       });
-      // Auto-remove after 3s
       setTimeout(() => {
         setTypingUsers(prev => prev.filter(u => u._id !== typingUser._id));
       }, 3000);
@@ -180,39 +231,9 @@ export default function ChatPage() {
     socket.on('user_typing', handleUserTyping);
     socket.on('user_stop_typing', handleUserStopTyping);
 
-    // If already connected, join immediately
     if (socket.connected) {
       handleConnect();
     }
-
-    // Load message history from API
-    setLoadingHistory(true);
-    setMessages([]);
-    setHasMore(true);
-    axiosClient.get(`/api/messages/${channelId}?limit=30`)
-      .then(res => {
-        if (res.data.status === 'success' && res.data.data) {
-          setMessages(res.data.data);
-          if (res.data.data.length < 30) setHasMore(false);
-        }
-      })
-      .catch(err => {
-        console.warn('⚠️ Failed to load message history:', err.message);
-      })
-      .finally(() => {
-        setLoadingHistory(false);
-      });
-
-    // Load pinned messages
-    axiosClient.get(`/api/messages/${channelId}?pinned=true`)
-      .then(res => {
-        if (res.data.status === 'success' && res.data.data) {
-          setGlobalPinnedMessages(res.data.data);
-        }
-      })
-      .catch(err => {
-        console.warn('⚠️ Failed to load pinned messages:', err.message);
-      });
 
     return () => {
       socket.off('connect', handleConnect);
