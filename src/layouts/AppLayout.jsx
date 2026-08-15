@@ -74,6 +74,7 @@ export default function AppLayout() {
   
   // Real communities fetched from backend
   const [myCommunities, setMyCommunities] = useState([]);
+  const [myFriends, setMyFriends] = useState([]);
   
   // Selected community & its channels
   const [selectedCommunity, setSelectedCommunity] = useState(null);
@@ -135,6 +136,14 @@ export default function AppLayout() {
           setUnreadMessages(msgs);
         })
         .catch(err => console.error('Lỗi lấy thông báo:', err));
+
+      axiosClient.get('/api/friends')
+        .then(res => {
+          if (res.data?.success && res.data?.data?.friends) {
+            setMyFriends(res.data.data.friends);
+          }
+        })
+        .catch(err => console.error('Lỗi lấy danh sách bạn bè:', err));
     }
   }, [user?._id]);
 
@@ -504,6 +513,52 @@ export default function AppLayout() {
               >
                 <ShoppingBag className="w-5 h-5 mr-3 shrink-0" />
                 <span className="font-semibold text-[15px]">Cửa hàng</span>
+              </div>
+
+              {/* Divider Line */}
+              <div className="w-full h-[1px] bg-[#3f4147]/40 my-3" />
+
+              {/* Direct Messages List Header */}
+              <div className="flex items-center justify-between px-2 mb-1 group">
+                <span className="text-[11px] font-bold text-[#949ba4] uppercase tracking-wider">
+                  Tin nhắn trực tiếp
+                </span>
+                <Plus 
+                  className="w-4 h-4 text-[#949ba4] hover:text-white cursor-pointer transition-colors"
+                  onClick={() => navigate('/friends')}
+                  title="Thêm bạn bè"
+                />
+              </div>
+
+              {/* Friends List */}
+              <div className="space-y-0.5 mt-1">
+                {myFriends.length > 0 ? (
+                  myFriends.map((friend) => {
+                    const isOnline = onlineUserIds.has(String(friend._id || friend.id));
+                    const avatarSrc = friend.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(friend.displayName || friend.username || 'User')}&background=2b2d31&color=fff`;
+
+                    return (
+                      <div 
+                        key={friend._id}
+                        onClick={() => navigate('/friends')}
+                        className="flex items-center gap-3 px-2 py-2 rounded-md cursor-pointer transition-all text-[#949ba4] hover:bg-[#35373c] hover:text-[#dbdee1] group relative"
+                      >
+                        <div className="relative shrink-0 w-8 h-8 rounded-full">
+                          <img src={avatarSrc} alt={friend.username} className="w-full h-full rounded-full object-cover" />
+                          <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#2b2d31] ${isOnline ? 'bg-[#23a55a]' : 'bg-[#80848e]'}`} />
+                        </div>
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-sm font-medium text-[#f2f3f5] truncate group-hover:text-white">{friend.displayName || friend.username}</span>
+                          <span className="text-[11px] text-[#949ba4] truncate">{friend.username}</span>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="px-2 py-3 text-xs text-[#949ba4] text-center italic">
+                    Chưa có bạn bè nào
+                  </div>
+                )}
               </div>
             </>
           )}
