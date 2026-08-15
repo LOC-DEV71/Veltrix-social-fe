@@ -392,29 +392,40 @@ export default function DirectMessagePage() {
         const frameInfo = getFrameInfo(recipient);
         const nameplateInfo = getNameplateInfo(recipient);
         const effectInfo = getProfileEffectInfo(recipient);
+        const bannerBg = recipient.bannerColor || '#18191c';
 
         return (
-          <div className="w-[340px] bg-[#232428] border-l border-[#1f2023] flex flex-col h-full shrink-0 overflow-y-auto no-scrollbar relative">
+          <div 
+            className="w-[340px] border-l border-[#1f2023] flex flex-col h-full shrink-0 overflow-y-auto no-scrollbar relative transition-all"
+            style={{
+              backgroundColor: '#232428',
+              backgroundImage: recipient.bannerColor 
+                ? `linear-gradient(180deg, ${recipient.bannerColor}30 0%, #232428 40%)`
+                : 'none'
+            }}
+          >
             {/* Profile Effect Overlay */}
             {effectInfo && (
               <div className="absolute inset-0 pointer-events-none z-30 overflow-hidden">
-                <img src={effectInfo.animatedUrl || effectInfo.staticUrl} alt="profile effect" className="w-full h-full object-cover opacity-80" />
+                <img src={effectInfo.animatedUrl || effectInfo.staticUrl} alt="profile effect" className="w-full h-full object-cover opacity-90" />
               </div>
             )}
 
-            {/* Header Banner & Nameplate */}
-            <div className="relative h-32 overflow-hidden" style={{ backgroundColor: recipient.bannerColor || '#18191c' }}>
+            {/* Header Banner */}
+            <div className="relative h-32 w-full overflow-hidden shrink-0" style={{ backgroundColor: bannerBg }}>
               {recipient.bannerImage && (
                 <img src={recipient.bannerImage} alt="banner" className="w-full h-full object-cover" />
               )}
               {nameplateInfo && (
-                <div className="absolute inset-0 pointer-events-none opacity-80 mix-blend-screen z-10">
+                <div className="absolute inset-0 pointer-events-none opacity-90 mix-blend-screen z-10">
                   <img src={nameplateInfo.animatedUrl || nameplateInfo.staticUrl} alt="nameplate" className="w-full h-full object-cover" />
                 </div>
               )}
+            </div>
 
-              {/* Avatar with Frame */}
-              <div className="absolute -bottom-10 left-4 w-20 h-20 rounded-full border-4 border-[#232428] bg-[#1e1f22] z-20">
+            {/* Avatar Row (Placed outside overflow-hidden banner so avatar is NEVER clipped) */}
+            <div className="relative px-4 pt-0 z-20 flex justify-between items-end">
+              <div className="relative -mt-12 w-20 h-20 rounded-full border-4 border-[#232428] bg-[#1e1f22] shrink-0">
                 <img src={avatarSrc} alt={recipient.username} className="w-full h-full rounded-full object-cover" />
                 {frameInfo && (
                   <img 
@@ -428,8 +439,8 @@ export default function DirectMessagePage() {
             </div>
 
             {/* User Info Card Content */}
-            <div className="pt-12 px-4 pb-6 space-y-4 relative z-20">
-              <div className="bg-[#111214] p-3 rounded-lg border border-[#1f2023]/60 space-y-2">
+            <div className="pt-3 px-4 pb-6 space-y-4 relative z-20">
+              <div className="bg-[#111214]/90 backdrop-blur-md p-4 rounded-xl border border-[#1f2023]/80 shadow-xl space-y-3">
                 <div>
                   <h2 className="text-xl font-bold text-white flex items-center gap-1.5">
                     {recipient.displayName || recipient.username}
@@ -466,7 +477,7 @@ export default function DirectMessagePage() {
 
               {/* Mutual Servers Section */}
               {mutualCommunities && mutualCommunities.length > 0 && (
-                <div className="bg-[#111214] p-3 rounded-lg border border-[#1f2023]/60">
+                <div className="bg-[#111214]/90 backdrop-blur-md p-3 rounded-xl border border-[#1f2023]/80 shadow-xl">
                   <h4 className="font-bold text-[#b5bac1] uppercase text-[10px] mb-2 flex items-center justify-between">
                     <span>Máy chủ chung</span>
                     <span className="text-[#5865F2] font-semibold">{mutualCommunities.length}</span>
@@ -476,10 +487,10 @@ export default function DirectMessagePage() {
                       <div 
                         key={c._id}
                         onClick={() => navigate(`/community/${c._id}`)}
-                        className="flex items-center justify-between p-1.5 rounded hover:bg-[#2b2d31] cursor-pointer transition-colors group"
+                        className="flex items-center justify-between p-2 rounded-lg hover:bg-[#2b2d31] cursor-pointer transition-colors group"
                       >
-                        <div className="flex items-center gap-2 min-w-0">
-                          <div className="w-7 h-7 rounded-full bg-[#2b2d31] overflow-hidden flex items-center justify-center font-bold text-xs text-white shrink-0">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="w-8 h-8 rounded-full bg-[#2b2d31] overflow-hidden flex items-center justify-center font-bold text-xs text-white shrink-0 shadow-sm border border-[#1f2023]">
                             {c.icon ? <img src={c.icon} alt={c.name} className="w-full h-full object-cover" /> : c.name.charAt(0)}
                           </div>
                           <span className="text-xs text-[#dbdee1] group-hover:text-white font-medium truncate">{c.name}</span>
@@ -493,7 +504,7 @@ export default function DirectMessagePage() {
               <div className="pt-2">
                 <button 
                   onClick={() => navigate('/friends')}
-                  className="w-full py-2 bg-[#35373c] hover:bg-[#404249] text-white text-xs font-semibold rounded transition-colors cursor-pointer"
+                  className="w-full py-2.5 bg-[#35373c] hover:bg-[#404249] text-white text-xs font-semibold rounded-lg transition-colors cursor-pointer shadow-md"
                 >
                   Xem danh sách bạn bè
                 </button>
