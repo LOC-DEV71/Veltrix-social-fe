@@ -14,6 +14,7 @@ import BannedPage from '../../pages/client/BannedPage';
 import FriendsPage from '../../pages/client/FriendsPage';
 import InvitePage from '../../pages/client/InvitePage';
 import VoiceChannelPage from '../../pages/client/VoiceChannelPage';
+import DirectMessagePage from '../../pages/client/DirectMessagePage';
 
 export const ClientRoutes = (
   <>
@@ -53,6 +54,9 @@ export const ClientRoutes = (
 
       {/* Friends list page */}
       <Route path="friends" element={<FriendsPage />} />
+
+      {/* 1-on-1 Direct Message chat room */}
+      <Route path="dm/:recipientId" element={<DirectMessagePage />} />
     </Route>
   </>
 );

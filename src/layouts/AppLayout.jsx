@@ -537,19 +537,34 @@ export default function AppLayout() {
                     const isOnline = onlineUserIds.has(String(friend._id || friend.id));
                     const avatarSrc = friend.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(friend.displayName || friend.username || 'User')}&background=2b2d31&color=fff`;
 
+                    const isActive = location.pathname === `/dm/${friend._id}`;
+
                     return (
                       <div 
                         key={friend._id}
-                        onClick={() => navigate('/friends')}
-                        className="flex items-center gap-3 px-2 py-2 rounded-md cursor-pointer transition-all text-[#949ba4] hover:bg-[#35373c] hover:text-[#dbdee1] group relative"
+                        onClick={() => navigate(`/dm/${friend._id}`)}
+                        className={`flex items-center justify-between px-2 py-2 rounded-md cursor-pointer transition-all group relative overflow-hidden ${
+                          isActive 
+                            ? 'bg-[#35373c] text-white font-semibold' 
+                            : 'text-[#949ba4] hover:bg-[#35373c]/80 hover:text-[#dbdee1]'
+                        }`}
                       >
-                        <div className="relative shrink-0 w-8 h-8 rounded-full">
-                          <img src={avatarSrc} alt={friend.username} className="w-full h-full rounded-full object-cover" />
-                          <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#2b2d31] ${isOnline ? 'bg-[#23a55a]' : 'bg-[#80848e]'}`} />
-                        </div>
-                        <div className="flex flex-col min-w-0">
-                          <span className="text-sm font-medium text-[#f2f3f5] truncate group-hover:text-white">{friend.displayName || friend.username}</span>
-                          <span className="text-[11px] text-[#949ba4] truncate">{friend.username}</span>
+                        {/* Nameplate background if present */}
+                        {(friend.activeNameplateStaticUrl || friend.activeNameplateAnimatedUrl) && (
+                          <div className="absolute inset-0 z-0 pointer-events-none opacity-40 mix-blend-screen">
+                            <img src={friend.activeNameplateStaticUrl || friend.activeNameplateAnimatedUrl} className="w-full h-full object-cover" alt="nameplate" />
+                          </div>
+                        )}
+
+                        <div className="relative z-10 flex items-center gap-3 min-w-0">
+                          <div className="relative shrink-0 w-8 h-8 rounded-full">
+                            <img src={avatarSrc} alt={friend.username} className="w-full h-full rounded-full object-cover" />
+                            <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#2b2d31] ${isOnline ? 'bg-[#23a55a]' : 'bg-[#80848e]'}`} />
+                          </div>
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-sm font-medium text-[#f2f3f5] truncate group-hover:text-white">{friend.displayName || friend.username}</span>
+                            <span className="text-[11px] text-[#949ba4] truncate">@{friend.username}</span>
+                          </div>
                         </div>
                       </div>
                     );
