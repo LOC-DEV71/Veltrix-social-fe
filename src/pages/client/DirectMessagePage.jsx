@@ -311,13 +311,14 @@ export default function DirectMessagePage() {
                     <span className="px-3 py-1.5 rounded bg-[#2b2d31] text-xs text-[#949ba4] font-medium border border-[#1e1f22]">
                       Không có máy chủ chung
                     </span>
+                  {(!messages || messages.length === 0) && (
+                    <button 
+                      onClick={handleSendWave}
+                      className="px-4 py-1.5 rounded bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer shadow-md"
+                    >
+                      <Hand className="w-4 h-4" /> Vẫy tay tới {recipient?.displayName || recipient?.username}
+                    </button>
                   )}
-                  <button 
-                    onClick={handleSendWave}
-                    className="px-4 py-1.5 rounded bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer shadow-md"
-                  >
-                    <Hand className="w-4 h-4" /> Vẫy tay tới {recipient?.displayName || recipient?.username}
-                  </button>
                 </div>
               </div>
 
