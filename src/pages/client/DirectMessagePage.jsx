@@ -36,7 +36,32 @@ export default function DirectMessagePage() {
   const socketRef = useRef(null);
   const typingTimeoutRef = useRef(null);
 
-  useTitle(recipient ? `@${recipient.displayName || recipient.username}` : 'Tin nhắn trực tiếp');
+  const getFrameInfo = (userObj) => {
+    if (!userObj) return null;
+    if (userObj.activeFrameAnimatedUrl) return { animatedUrl: userObj.activeFrameAnimatedUrl, staticUrl: userObj.activeFrameStaticUrl };
+    if (userObj.activeFrame && typeof userObj.activeFrame === 'object' && userObj.activeFrame.animatedUrl) {
+      return { animatedUrl: userObj.activeFrame.animatedUrl, staticUrl: userObj.activeFrame.staticUrl };
+    }
+    return null;
+  };
+
+  const getNameplateInfo = (userObj) => {
+    if (!userObj) return null;
+    if (userObj.activeNameplateAnimatedUrl) return { animatedUrl: userObj.activeNameplateAnimatedUrl, staticUrl: userObj.activeNameplateStaticUrl || userObj.activeNameplateAnimatedUrl };
+    if (userObj.activeNameplate && typeof userObj.activeNameplate === 'object' && userObj.activeNameplate.animatedUrl) {
+      return { animatedUrl: userObj.activeNameplate.animatedUrl, staticUrl: userObj.activeNameplate.staticUrl || userObj.activeNameplate.animatedUrl };
+    }
+    return null;
+  };
+
+  const getProfileEffectInfo = (userObj) => {
+    if (!userObj) return null;
+    if (userObj.activeProfileEffectAnimatedUrl) return { animatedUrl: userObj.activeProfileEffectAnimatedUrl, staticUrl: userObj.activeProfileEffectStaticUrl };
+    if (userObj.activeProfileEffect && typeof userObj.activeProfileEffect === 'object' && userObj.activeProfileEffect.animatedUrl) {
+      return { animatedUrl: userObj.activeProfileEffect.animatedUrl, staticUrl: userObj.activeProfileEffect.staticUrl };
+    }
+    return null;
+  };
 
   const scrollToBottom = useCallback(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -363,52 +388,120 @@ export default function DirectMessagePage() {
       </div>
 
       {/* Right Sidebar: Recipient Profile Panel */}
-      {showRightSidebar && recipient && (
-        <div className="w-[340px] bg-[#232428] border-l border-[#1f2023] flex flex-col h-full shrink-0 overflow-y-auto no-scrollbar">
-          {/* Header Banner */}
-          <div className="relative h-28 bg-[#18191c]">
-            {recipient.bannerImage && (
-              <img src={recipient.bannerImage} alt="banner" className="w-full h-full object-cover" />
-            )}
-            {/* Avatar with Frame */}
-            <div className="absolute -bottom-10 left-4 w-20 h-20 rounded-full border-4 border-[#232428] bg-[#1e1f22]">
-              <img src={avatarSrc} alt={recipient.username} className="w-full h-full rounded-full object-cover" />
-              <div className={`absolute bottom-0 right-0 w-4 h-4 rounded-full border-2 border-[#232428] ${isOnline ? 'bg-[#23a55a]' : 'bg-[#80848e]'}`} />
-            </div>
-          </div>
+      {showRightSidebar && recipient && (() => {
+        const frameInfo = getFrameInfo(recipient);
+        const nameplateInfo = getNameplateInfo(recipient);
+        const effectInfo = getProfileEffectInfo(recipient);
 
-          {/* User Info Section */}
-          <div className="pt-12 px-4 pb-6 space-y-4">
-            <div>
-              <h2 className="text-xl font-bold text-white">{recipient.displayName || recipient.username}</h2>
-              <p className="text-xs text-[#b5bac1]">@{recipient.username}</p>
-            </div>
-
-            <div className="border-t border-[#35373c] pt-4 space-y-3 text-xs">
-              <div>
-                <h4 className="font-bold text-[#b5bac1] uppercase text-[10px] mb-1">Gia nhập từ</h4>
-                <p className="text-white font-medium">{new Date(recipient.createdAt || Date.now()).toLocaleDateString('vi-VN')}</p>
+        return (
+          <div className="w-[340px] bg-[#232428] border-l border-[#1f2023] flex flex-col h-full shrink-0 overflow-y-auto no-scrollbar relative">
+            {/* Profile Effect Overlay */}
+            {effectInfo && (
+              <div className="absolute inset-0 pointer-events-none z-30 overflow-hidden">
+                <img src={effectInfo.animatedUrl || effectInfo.staticUrl} alt="profile effect" className="w-full h-full object-cover opacity-80" />
               </div>
+            )}
 
-              {recipient.customStatus?.text && (
-                <div>
-                  <h4 className="font-bold text-[#b5bac1] uppercase text-[10px] mb-1">Trạng thái</h4>
-                  <p className="text-white italic">{recipient.customStatus.text}</p>
+            {/* Header Banner & Nameplate */}
+            <div className="relative h-32 overflow-hidden" style={{ backgroundColor: recipient.bannerColor || '#18191c' }}>
+              {recipient.bannerImage && (
+                <img src={recipient.bannerImage} alt="banner" className="w-full h-full object-cover" />
+              )}
+              {nameplateInfo && (
+                <div className="absolute inset-0 pointer-events-none opacity-80 mix-blend-screen z-10">
+                  <img src={nameplateInfo.animatedUrl || nameplateInfo.staticUrl} alt="nameplate" className="w-full h-full object-cover" />
                 </div>
               )}
+
+              {/* Avatar with Frame */}
+              <div className="absolute -bottom-10 left-4 w-20 h-20 rounded-full border-4 border-[#232428] bg-[#1e1f22] z-20">
+                <img src={avatarSrc} alt={recipient.username} className="w-full h-full rounded-full object-cover" />
+                {frameInfo && (
+                  <img 
+                    src={frameInfo.animatedUrl || frameInfo.staticUrl} 
+                    alt="avatar frame" 
+                    className="absolute -top-3 -left-3 w-[130%] h-[130%] max-w-none object-contain pointer-events-none z-30" 
+                  />
+                )}
+                <div className={`absolute bottom-0 right-0 w-4 h-4 rounded-full border-2 border-[#232428] z-40 ${isOnline ? 'bg-[#23a55a]' : 'bg-[#80848e]'}`} />
+              </div>
             </div>
 
-            <div className="pt-4">
-              <button 
-                onClick={() => navigate('/friends')}
-                className="w-full py-2 bg-[#35373c] hover:bg-[#404249] text-white text-xs font-semibold rounded transition-colors cursor-pointer"
-              >
-                Xem danh sách bạn bè
-              </button>
+            {/* User Info Card Content */}
+            <div className="pt-12 px-4 pb-6 space-y-4 relative z-20">
+              <div className="bg-[#111214] p-3 rounded-lg border border-[#1f2023]/60 space-y-2">
+                <div>
+                  <h2 className="text-xl font-bold text-white flex items-center gap-1.5">
+                    {recipient.displayName || recipient.username}
+                  </h2>
+                  <p className="text-xs text-[#b5bac1]">@{recipient.username}</p>
+                  {recipient.pronouns && (
+                    <span className="inline-block mt-1 text-[11px] text-[#949ba4] bg-[#2b2d31] px-2 py-0.5 rounded-full font-medium">
+                      {recipient.pronouns}
+                    </span>
+                  )}
+                </div>
+
+                {recipient.aboutMe && (
+                  <div className="border-t border-[#232428] pt-2">
+                    <h4 className="font-bold text-[#b5bac1] uppercase text-[10px] mb-1">Về tôi</h4>
+                    <p className="text-xs text-[#dbdee1] whitespace-pre-wrap leading-relaxed">{recipient.aboutMe}</p>
+                  </div>
+                )}
+
+                <div className="border-t border-[#232428] pt-2 text-xs space-y-2">
+                  <div>
+                    <h4 className="font-bold text-[#b5bac1] uppercase text-[10px] mb-0.5">Gia nhập từ</h4>
+                    <p className="text-white font-medium">{new Date(recipient.createdAt || Date.now()).toLocaleDateString('vi-VN')}</p>
+                  </div>
+
+                  {recipient.customStatus?.text && (
+                    <div>
+                      <h4 className="font-bold text-[#b5bac1] uppercase text-[10px] mb-0.5">Trạng thái</h4>
+                      <p className="text-white italic">{recipient.customStatus.text}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Mutual Servers Section */}
+              {mutualCommunities && mutualCommunities.length > 0 && (
+                <div className="bg-[#111214] p-3 rounded-lg border border-[#1f2023]/60">
+                  <h4 className="font-bold text-[#b5bac1] uppercase text-[10px] mb-2 flex items-center justify-between">
+                    <span>Máy chủ chung</span>
+                    <span className="text-[#5865F2] font-semibold">{mutualCommunities.length}</span>
+                  </h4>
+                  <div className="space-y-1.5 max-h-36 overflow-y-auto no-scrollbar">
+                    {mutualCommunities.map((c) => (
+                      <div 
+                        key={c._id}
+                        onClick={() => navigate(`/community/${c._id}`)}
+                        className="flex items-center justify-between p-1.5 rounded hover:bg-[#2b2d31] cursor-pointer transition-colors group"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="w-7 h-7 rounded-full bg-[#2b2d31] overflow-hidden flex items-center justify-center font-bold text-xs text-white shrink-0">
+                            {c.icon ? <img src={c.icon} alt={c.name} className="w-full h-full object-cover" /> : c.name.charAt(0)}
+                          </div>
+                          <span className="text-xs text-[#dbdee1] group-hover:text-white font-medium truncate">{c.name}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="pt-2">
+                <button 
+                  onClick={() => navigate('/friends')}
+                  className="w-full py-2 bg-[#35373c] hover:bg-[#404249] text-white text-xs font-semibold rounded transition-colors cursor-pointer"
+                >
+                  Xem danh sách bạn bè
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Mutual Servers Modal */}
       {showMutualModal && (
