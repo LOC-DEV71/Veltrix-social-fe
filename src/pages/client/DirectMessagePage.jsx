@@ -12,6 +12,8 @@ import { API_BASE_URL } from '../../utils/config';
 import { useTitle } from '../../hooks/useTitle';
 import EmojiPicker from 'emoji-picker-react';
 import MemberProfilePopout from '../../components/MemberProfilePopout';
+import LoopingAPNG from '../../components/LoopingAPNG';
+import SequentialAPNGLayers from '../../components/SequentialAPNGLayers';
 
 export default function DirectMessagePage() {
   const { recipientId } = useParams();
@@ -56,9 +58,20 @@ export default function DirectMessagePage() {
 
   const getProfileEffectInfo = (userObj) => {
     if (!userObj) return null;
-    if (userObj.activeProfileEffectAnimatedUrl) return { animatedUrl: userObj.activeProfileEffectAnimatedUrl, staticUrl: userObj.activeProfileEffectStaticUrl };
-    if (userObj.activeProfileEffect && typeof userObj.activeProfileEffect === 'object' && userObj.activeProfileEffect.animatedUrl) {
-      return { animatedUrl: userObj.activeProfileEffect.animatedUrl, staticUrl: userObj.activeProfileEffect.staticUrl };
+    const layers = userObj.activeProfileEffectLayers || userObj.activeProfileEffect?.effectLayers || [];
+    if (userObj.activeProfileEffectAnimatedUrl) {
+      return { 
+        animatedUrl: userObj.activeProfileEffectAnimatedUrl, 
+        staticUrl: userObj.activeProfileEffectStaticUrl,
+        layers 
+      };
+    }
+    if (userObj.activeProfileEffect && typeof userObj.activeProfileEffect === 'object') {
+      return { 
+        animatedUrl: userObj.activeProfileEffect.animatedUrl, 
+        staticUrl: userObj.activeProfileEffect.staticUrl,
+        layers: userObj.activeProfileEffect.effectLayers || layers 
+      };
     }
     return null;
   };
@@ -392,23 +405,34 @@ export default function DirectMessagePage() {
         const frameInfo = getFrameInfo(recipient);
         const nameplateInfo = getNameplateInfo(recipient);
         const effectInfo = getProfileEffectInfo(recipient);
-        const bannerBg = recipient.bannerColor || '#18191c';
+        const bannerBg = recipient.bannerColor || '#85744a';
+        const themePrimary = recipient.themeColors?.primary || bannerBg;
+        const themeAccent = recipient.themeColors?.accent || bannerBg;
 
         return (
           <div 
-            className="w-[340px] border-l border-[#1f2023] flex flex-col h-full shrink-0 overflow-y-auto no-scrollbar relative transition-all"
+            className="w-[340px] border-l flex flex-col h-full shrink-0 overflow-y-auto no-scrollbar relative transition-all shadow-2xl"
             style={{
-              backgroundColor: '#232428',
-              backgroundImage: recipient.bannerColor 
-                ? `linear-gradient(180deg, ${recipient.bannerColor}30 0%, #232428 40%)`
-                : 'none'
+              borderColor: themePrimary || bannerBg || '#1f2023',
+              background: `linear-gradient(180deg, color-mix(in srgb, ${themePrimary} 35%, #111214) 0%, color-mix(in srgb, ${bannerBg} 20%, #111214) 40%, #111214 100%)`
             }}
           >
-            {/* Profile Effect Overlay */}
+            {/* Profile Effect Overlay - Looping APNG or Sequential Multi-layer */}
             {effectInfo && (
-              <div className="absolute inset-0 pointer-events-none z-30 overflow-hidden">
-                <img src={effectInfo.animatedUrl || effectInfo.staticUrl} alt="profile effect" className="w-full h-full object-cover opacity-90" />
-              </div>
+              effectInfo.layers?.length > 0 ? (
+                <div className="absolute inset-0 pointer-events-none overflow-hidden z-[100]">
+                  <SequentialAPNGLayers layers={effectInfo.layers} durationPerLayer={3000} />
+                </div>
+              ) : effectInfo.animatedUrl || effectInfo.staticUrl ? (
+                <div className="absolute inset-0 pointer-events-none overflow-hidden z-[100]">
+                  <LoopingAPNG 
+                    src={effectInfo.animatedUrl || effectInfo.staticUrl} 
+                    className="w-full h-full object-fill opacity-90" 
+                    alt="Profile Effect" 
+                    duration={3000} 
+                  />
+                </div>
+              ) : null
             )}
 
             {/* Header Banner */}
