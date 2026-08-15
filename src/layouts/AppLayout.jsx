@@ -542,14 +542,34 @@ export default function AppLayout() {
               {/* Friends & DM Conversations List */}
               <div className="space-y-0.5 mt-1">
                 {(() => {
-                  const activeDmPartners = (dmRooms || []).map(room => {
-                    const partner = (room.participants || []).find(p => String(p._id || p.id) !== String(user._id));
-                    return partner ? { ...partner, dmRoomId: room._id, lastMessage: room.lastMessage, lastActivity: room.lastActivity } : null;
-                  }).filter(Boolean);
+                  const seenUserIds = new Set();
+                  const displayDmList = [];
 
-                  const activePartnerIds = new Set(activeDmPartners.map(p => String(p._id || p.id)));
-                  const otherFriends = (myFriends || []).filter(f => !activePartnerIds.has(String(f._id || f.id)));
-                  const displayDmList = [...activeDmPartners, ...otherFriends];
+                  // Add active DM partners first
+                  for (const room of (dmRooms || [])) {
+                    const partner = (room.participants || []).find(p => p && String(p._id || p.id) !== String(user?._id));
+                    if (partner) {
+                      const partnerId = String(partner._id || partner.id);
+                      if (!seenUserIds.has(partnerId)) {
+                        seenUserIds.add(partnerId);
+                        displayDmList.push({
+                          ...partner,
+                          dmRoomId: room._id,
+                          lastMessage: room.lastMessage,
+                          lastActivity: room.lastActivity
+                        });
+                      }
+                    }
+                  }
+
+                  // Add remaining friends
+                  for (const friend of (myFriends || [])) {
+                    const friendId = String(friend._id || friend.id);
+                    if (!seenUserIds.has(friendId)) {
+                      seenUserIds.add(friendId);
+                      displayDmList.push(friend);
+                    }
+                  }
 
                   return displayDmList.length > 0 ? (
                     displayDmList.map((friend) => {
