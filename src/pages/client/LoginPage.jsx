@@ -55,7 +55,9 @@ export default function LoginPage() {
         navigate('/banned');
         return;
       }
-      setError(err.response?.data?.message || 'Email hoặc Mật khẩu không chính xác!');
+      const apiMsg = err.response?.data?.message;
+      const networkMsg = err.message ? `Lỗi kết nối API: ${err.message}` : 'Không thể kết nối đến máy chủ!';
+      setError(apiMsg || networkMsg);
     } finally {
       setLoading(false);
     }
