@@ -75,6 +75,7 @@ export default function AppLayout() {
   // Real communities fetched from backend
   const [myCommunities, setMyCommunities] = useState([]);
   const [myFriends, setMyFriends] = useState([]);
+  const [dmRooms, setDmRooms] = useState([]);
   
   // Selected community & its channels
   const [selectedCommunity, setSelectedCommunity] = useState(null);
@@ -144,6 +145,14 @@ export default function AppLayout() {
           }
         })
         .catch(err => console.error('Lỗi lấy danh sách bạn bè:', err));
+
+      axiosClient.get('/api/dm/rooms')
+        .then(res => {
+          if (res.data?.success && Array.isArray(res.data?.data)) {
+            setDmRooms(res.data.data);
+          }
+        })
+        .catch(err => console.error('Lỗi lấy DM rooms:', err));
     }
   }, [user?._id]);
 
@@ -530,50 +539,61 @@ export default function AppLayout() {
                 />
               </div>
 
-              {/* Friends List */}
+              {/* Friends & DM Conversations List */}
               <div className="space-y-0.5 mt-1">
-                {myFriends.length > 0 ? (
-                  myFriends.map((friend) => {
-                    const isOnline = onlineUserIds.has(String(friend._id || friend.id));
-                    const avatarSrc = friend.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(friend.displayName || friend.username || 'User')}&background=2b2d31&color=fff`;
+                {(() => {
+                  const activeDmPartners = (dmRooms || []).map(room => {
+                    const partner = (room.participants || []).find(p => String(p._id || p.id) !== String(user._id));
+                    return partner ? { ...partner, dmRoomId: room._id, lastMessage: room.lastMessage, lastActivity: room.lastActivity } : null;
+                  }).filter(Boolean);
 
-                    const isActive = location.pathname === `/dm/${friend._id}`;
+                  const activePartnerIds = new Set(activeDmPartners.map(p => String(p._id || p.id)));
+                  const otherFriends = (myFriends || []).filter(f => !activePartnerIds.has(String(f._id || f.id)));
+                  const displayDmList = [...activeDmPartners, ...otherFriends];
 
-                    return (
-                      <div 
-                        key={friend._id}
-                        onClick={() => navigate(`/dm/${friend._id}`)}
-                        className={`flex items-center justify-between px-2 py-2 rounded-md cursor-pointer transition-all group relative overflow-hidden ${
-                          isActive 
-                            ? 'bg-[#35373c] text-white font-semibold' 
-                            : 'text-[#949ba4] hover:bg-[#35373c]/80 hover:text-[#dbdee1]'
-                        }`}
-                      >
-                        {/* Nameplate background if present */}
-                        {(friend.activeNameplateStaticUrl || friend.activeNameplateAnimatedUrl) && (
-                          <div className="absolute inset-0 z-0 pointer-events-none opacity-40 mix-blend-screen">
-                            <img src={friend.activeNameplateStaticUrl || friend.activeNameplateAnimatedUrl} className="w-full h-full object-cover" alt="nameplate" />
-                          </div>
-                        )}
+                  return displayDmList.length > 0 ? (
+                    displayDmList.map((friend) => {
+                      const isOnline = onlineUserIds.has(String(friend._id || friend.id));
+                      const avatarSrc = friend.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(friend.displayName || friend.username || 'User')}&background=2b2d31&color=fff`;
 
-                        <div className="relative z-10 flex items-center gap-3 min-w-0">
-                          <div className="relative shrink-0 w-8 h-8 rounded-full">
-                            <img src={avatarSrc} alt={friend.username} className="w-full h-full rounded-full object-cover" />
-                            <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#2b2d31] ${isOnline ? 'bg-[#23a55a]' : 'bg-[#80848e]'}`} />
-                          </div>
-                          <div className="flex flex-col min-w-0">
-                            <span className="text-sm font-medium text-[#f2f3f5] truncate group-hover:text-white">{friend.displayName || friend.username}</span>
-                            <span className="text-[11px] text-[#949ba4] truncate">@{friend.username}</span>
+                      const isActive = location.pathname === `/dm/${friend._id}`;
+
+                      return (
+                        <div 
+                          key={friend._id}
+                          onClick={() => navigate(`/dm/${friend._id}`)}
+                          className={`flex items-center justify-between px-2 py-2 rounded-md cursor-pointer transition-all group relative overflow-hidden ${
+                            isActive 
+                              ? 'bg-[#35373c] text-white font-semibold' 
+                              : 'text-[#949ba4] hover:bg-[#35373c]/80 hover:text-[#dbdee1]'
+                          }`}
+                        >
+                          {/* Nameplate background if present */}
+                          {(friend.activeNameplateStaticUrl || friend.activeNameplateAnimatedUrl) && (
+                            <div className="absolute inset-0 z-0 pointer-events-none opacity-40 mix-blend-screen">
+                              <img src={friend.activeNameplateStaticUrl || friend.activeNameplateAnimatedUrl} className="w-full h-full object-cover" alt="nameplate" />
+                            </div>
+                          )}
+
+                          <div className="relative z-10 flex items-center gap-3 min-w-0">
+                            <div className="relative shrink-0 w-8 h-8 rounded-full">
+                              <img src={avatarSrc} alt={friend.username} className="w-full h-full rounded-full object-cover" />
+                              <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#2b2d31] ${isOnline ? 'bg-[#23a55a]' : 'bg-[#80848e]'}`} />
+                            </div>
+                            <div className="flex flex-col min-w-0">
+                              <span className="text-sm font-medium text-[#f2f3f5] truncate group-hover:text-white">{friend.displayName || friend.username}</span>
+                              <span className="text-[11px] text-[#949ba4] truncate">@{friend.username}</span>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    );
-                  })
-                ) : (
-                  <div className="px-2 py-3 text-xs text-[#949ba4] text-center italic">
-                    Chưa có bạn bè nào
-                  </div>
-                )}
+                      );
+                    })
+                  ) : (
+                    <div className="px-2 py-3 text-xs text-[#949ba4] text-center italic">
+                      Chưa có cuộc trò chuyện nào
+                    </div>
+                  );
+                })()}
               </div>
             </>
           )}
