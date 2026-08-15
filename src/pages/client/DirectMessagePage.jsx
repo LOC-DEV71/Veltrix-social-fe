@@ -29,6 +29,7 @@ export default function DirectMessagePage() {
   const [sending, setSending] = useState(false);
   const [showRightSidebar, setShowRightSidebar] = useState(true);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showMutualModal, setShowMutualModal] = useState(false);
   const [typingUsers, setTypingUsers] = useState([]);
 
   const chatEndRef = useRef(null);
@@ -261,7 +262,7 @@ export default function DirectMessagePage() {
                 <div className="flex flex-wrap items-center gap-2">
                   {mutualCommunities && mutualCommunities.length > 0 ? (
                     <button 
-                      onClick={() => navigate(`/community/${mutualCommunities[0]._id}`)}
+                      onClick={() => setShowMutualModal(true)}
                       className="px-3 py-1.5 rounded bg-[#2b2d31] hover:bg-[#35373c] text-xs text-[#5865F2] font-semibold border border-[#1e1f22] flex items-center gap-1.5 transition-colors cursor-pointer"
                       title={mutualCommunities.map(c => c.name).join(', ')}
                     >
@@ -404,6 +405,49 @@ export default function DirectMessagePage() {
               >
                 Xem danh sách bạn bè
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mutual Servers Modal */}
+      {showMutualModal && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#313338] border border-[#1f2023] rounded-lg w-full max-w-md p-6 shadow-2xl space-y-4 relative">
+            <div className="flex items-center justify-between border-b border-[#3f4147]/50 pb-3">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <Users className="w-5 h-5 text-[#5865F2]" />
+                Máy chủ chung ({mutualCommunities.length})
+              </h3>
+              <button onClick={() => setShowMutualModal(false)} className="text-[#949ba4] hover:text-white transition-colors cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-2 max-h-60 overflow-y-auto">
+              {mutualCommunities.map((c) => (
+                <div 
+                  key={c._id}
+                  className="flex items-center justify-between bg-[#2b2d31] p-3 rounded-lg hover:bg-[#35373c] transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-[#1e1f22] overflow-hidden flex items-center justify-center font-bold text-white shrink-0">
+                      {c.icon ? <img src={c.icon} alt={c.name} className="w-full h-full object-cover" /> : c.name.charAt(0)}
+                    </div>
+                    <span className="font-semibold text-white text-sm">{c.name}</span>
+                  </div>
+
+                  <button 
+                    onClick={() => {
+                      setShowMutualModal(false);
+                      navigate(`/community/${c._id}`);
+                    }}
+                    className="bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-semibold px-3 py-1.5 rounded transition-colors cursor-pointer"
+                  >
+                    Đến máy chủ
+                  </button>
+                </div>
+              ))}
             </div>
           </div>
         </div>
