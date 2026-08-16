@@ -891,7 +891,7 @@ export default function CommunitySettingsModal({ isOpen, onClose, community, onU
                           {bannerStatic && (
                             <>
                               <div 
-                                className={`absolute inset-0 pointer-events-none opacity-80 mix-blend-screen transition-opacity ${hasAnimatedBanner ? 'group-hover:hidden' : 'group-hover:opacity-100'}`}
+                                className={`absolute inset-0 pointer-events-none mix-blend-screen transition-opacity duration-300 ${hasAnimatedBanner ? 'opacity-80 group-hover:opacity-0' : 'opacity-80 group-hover:opacity-100'}`}
                                 style={{ 
                                   backgroundImage: `url(${bannerStatic})`, 
                                   backgroundSize: 'cover', 
@@ -902,7 +902,7 @@ export default function CommunitySettingsModal({ isOpen, onClose, community, onU
                               ></div>
                               {hasAnimatedBanner && (
                                 <div 
-                                  className="absolute inset-0 pointer-events-none opacity-100 mix-blend-screen transition-opacity hidden group-hover:block"
+                                  className="absolute inset-0 pointer-events-none mix-blend-screen transition-opacity duration-300 opacity-0 group-hover:opacity-100"
                                   style={{ 
                                     backgroundImage: `url(${bannerAnimated})`, 
                                     backgroundSize: 'cover', 
@@ -925,9 +925,9 @@ export default function CommunitySettingsModal({ isOpen, onClose, community, onU
                               />
                               {frameStatic && (
                                 <div className="absolute -inset-[2px] pointer-events-none z-10 scale-[1.15]">
-                                  <img src={frameStatic} className={`w-full h-full object-contain drop-shadow-lg ${hasAnimatedFrame ? 'group-hover:hidden' : ''}`} />
+                                  <img src={frameStatic} className={`w-full h-full object-contain drop-shadow-lg transition-opacity duration-300 ${hasAnimatedFrame ? 'opacity-100 group-hover:opacity-0' : 'opacity-100'}`} />
                                   {hasAnimatedFrame && (
-                                    <img src={frameAnimated} className="w-full h-full object-contain drop-shadow-lg hidden group-hover:block" />
+                                    <img src={frameAnimated} className="w-full h-full object-contain drop-shadow-lg absolute inset-0 transition-opacity duration-300 opacity-0 group-hover:opacity-100" />
                                   )}
                                 </div>
                               )}
