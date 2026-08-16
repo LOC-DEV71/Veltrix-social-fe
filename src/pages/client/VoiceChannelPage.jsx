@@ -559,7 +559,16 @@ export default function VoiceChannelPage() {
     if (!isScreenSharing) {
       try {
         addDebug('Requesting screen share...');
-        const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+        // audio: true → cho phép share âm thanh hệ thống (tab/app)
+        // Trình duyệt sẽ hỏi người dùng có muốn share audio không
+        const screenStream = await navigator.mediaDevices.getDisplayMedia({ 
+          video: true, 
+          audio: {
+            echoCancellation: false,  // Không cần echo cancel cho system audio
+            noiseSuppression: false,
+            autoGainControl: false,
+          }
+        });
         const screenTrack = screenStream.getVideoTracks()[0];
         
         localScreenStreamRef.current = screenStream;
