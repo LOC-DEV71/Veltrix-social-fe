@@ -18,6 +18,7 @@ const getMenuGroups = (communityName) => [
     title: 'BIỂU CẢM',
     items: [
       { id: 'emoji', label: 'Emoji' },
+      { id: 'animated_emoji', label: 'Emoji Động' },
       { id: 'sticker', label: 'Sticker' }
     ]
   },
@@ -96,6 +97,16 @@ export default function CommunitySettingsModal({ isOpen, onClose, community, onU
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) {
       alert('Vui lòng chọn file dưới 5MB để tối ưu.');
+      e.target.value = null;
+      return;
+    }
+    if (activeTab === 'animated_emoji' && file.type !== 'image/gif') {
+      alert('Vui lòng chọn file ảnh động (GIF) cho Emoji Động.');
+      e.target.value = null;
+      return;
+    }
+    if (activeTab === 'emoji' && file.type === 'image/gif') {
+      alert('Vui lòng chọn file ảnh tĩnh cho Emoji thường. Hoặc qua mục Emoji Động để tải lên GIF.');
       e.target.value = null;
       return;
     }
@@ -948,17 +959,23 @@ export default function CommunitySettingsModal({ isOpen, onClose, community, onU
     );
   }
 
-    if (activeTab === 'emoji') {
+    if (activeTab === 'emoji' || activeTab === 'animated_emoji') {
+      const isAnimated = activeTab === 'animated_emoji';
+      const filteredEmojis = (fullCommunity?.emojis || []).filter(e => {
+        const isGif = e.url.toLowerCase().endsWith('.gif');
+        return isAnimated ? isGif : !isGif;
+      });
+
       return (
         <div className="space-y-6 animate-fade-in text-[#dbdee1]">
-          <h2 className="text-xl font-bold text-white mb-6">Emoji Máy Chủ</h2>
+          <h2 className="text-xl font-bold text-white mb-6">{isAnimated ? 'Emoji Động Máy Chủ' : 'Emoji Máy Chủ'}</h2>
           <div className="flex flex-col items-center justify-center p-10 bg-[#2b2d31] rounded-lg border border-[#1f2023] text-center shadow-lg">
             <div className="w-20 h-20 bg-[#1e1f22] rounded-full flex items-center justify-center mb-6 border-2 border-dashed border-[#5865F2]">
               <Sparkles className="w-10 h-10 text-[#5865F2]" />
             </div>
-            <h3 className="text-lg font-bold text-white mb-2">Thêm Emoji Tùy Chỉnh</h3>
+            <h3 className="text-lg font-bold text-white mb-2">{isAnimated ? 'Thêm Emoji Động' : 'Thêm Emoji Tùy Chỉnh'}</h3>
             <p className="text-[#b5bac1] max-w-md mb-8 text-sm">
-              Bạn có thể tải lên tối đa 50 emoji tùy chỉnh cho máy chủ của mình (yêu cầu máy chủ đạt <strong className="text-pink-400">Đặc Quyền Cấp 2</strong>). Các thành viên có Vetrix Premium sẽ có thể sử dụng chúng.
+              Bạn có thể tải lên {isAnimated ? 'emoji động' : 'emoji tĩnh'} cho máy chủ của mình (yêu cầu máy chủ đạt <strong className="text-pink-400">Đặc Quyền Cấp 2</strong>). Các thành viên có Vetrix Premium sẽ có thể sử dụng chúng.
             </p>
             <button 
               className={`${community?.boost2 ? 'bg-[#5865F2] hover:bg-[#4752c4]' : 'bg-[#f47f1a] cursor-not-allowed opacity-50'} text-white px-6 py-2 rounded font-medium transition-colors flex items-center gap-2`}
@@ -982,11 +999,11 @@ export default function CommunitySettingsModal({ isOpen, onClose, community, onU
           </div>
 
           {/* Render Emoji List */}
-          {fullCommunity?.emojis?.length > 0 && (
+          {filteredEmojis.length > 0 && (
             <div className="mt-8">
-              <h3 className="text-sm font-bold text-[#b5bac1] uppercase mb-4">Emoji đã tải lên ({fullCommunity.emojis.length}/50)</h3>
+              <h3 className="text-sm font-bold text-[#b5bac1] uppercase mb-4">{isAnimated ? 'Emoji Động' : 'Emoji'} đã tải lên ({filteredEmojis.length})</h3>
               <div className="grid grid-cols-4 sm:grid-cols-6 gap-4">
-                {fullCommunity.emojis.map((emoji) => (
+                {filteredEmojis.map((emoji) => (
                   <div key={emoji._id} className="relative group bg-[#2b2d31] border border-[#1f2023] rounded p-2 flex flex-col items-center gap-2">
                     <img src={emoji.url} alt={emoji.name} className="w-10 h-10 object-contain" />
                     <span className="text-xs text-[#949ba4] truncate w-full text-center" title={emoji.name}>{emoji.name}</span>
