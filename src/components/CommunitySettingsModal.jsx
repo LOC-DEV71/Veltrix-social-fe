@@ -563,7 +563,7 @@ export default function CommunitySettingsModal({ isOpen, onClose, community, onU
     if (activeTab === 'id') {
       const isLevel2Boosted = community.boost2;
       return (
-        <div className="flex gap-8">
+        <div className="flex flex-col-reverse md:flex-row gap-8">
           <div className="flex-1 space-y-6">
             <div>
               <h2 className="text-xl font-bold text-white mb-2">Số Nhận Diện Máy Chủ</h2>
@@ -676,7 +676,7 @@ export default function CommunitySettingsModal({ isOpen, onClose, community, onU
             </div>
           </div>
 
-          <div className="w-[300px] shrink-0">
+          <div className="w-full md:w-[300px] shrink-0">
             {/* Right side preview */}
             <div className="bg-[#313338] rounded-lg p-4 border border-[#1f2023]">
               <div className="space-y-4">
