@@ -1078,20 +1078,20 @@ export default function CommunitySettingsModal({ isOpen, onClose, community, onU
   };
 
   return (
-    <div className="fixed inset-0 z-[200] bg-[#313338] flex animate-fade-in">
+    <div className="fixed inset-0 z-[200] bg-[#313338] flex flex-col md:flex-row animate-fade-in overflow-hidden">
       {/* Sidebar */}
-      <div className="w-[280px] bg-[#2b2d31] flex justify-end shrink-0">
-        <div className="w-[240px] py-14 px-2 overflow-y-auto no-scrollbar">
+      <div className="w-full md:w-[280px] bg-[#2b2d31] flex justify-start md:justify-end shrink-0 border-b md:border-b-0 border-[#1f2023] z-10">
+        <div className="w-full md:w-[240px] px-2 py-3 md:py-14 flex flex-row md:flex-col overflow-x-auto md:overflow-y-auto md:overflow-x-hidden no-scrollbar items-center md:items-stretch gap-2 md:gap-0">
           {visibleMenuGroups.map((group, i) => (
-            <div key={i} className="mb-4">
-              <h3 className="text-[11px] font-bold text-[#949ba4] uppercase mb-1 px-2 truncate">
+            <div key={i} className="flex flex-row md:flex-col md:mb-4 gap-2 md:gap-0 shrink-0">
+              <h3 className="hidden md:block text-[11px] font-bold text-[#949ba4] uppercase mb-1 px-2 truncate">
                 {group.title}
               </h3>
               {group.items.map(item => (
                 <div 
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
-                  className={`px-2 py-1.5 rounded text-[15px] cursor-pointer transition-colors mb-0.5 ${
+                  className={`px-3 py-2 md:px-2 md:py-1.5 rounded text-[14px] md:text-[15px] cursor-pointer transition-colors md:mb-0.5 whitespace-nowrap shrink-0 ${
                     activeTab === item.id 
                       ? 'bg-[#404249] text-white font-medium' 
                       : 'text-[#b5bac1] hover:bg-[#35373c] hover:text-[#dbdee1]'
@@ -1100,14 +1100,14 @@ export default function CommunitySettingsModal({ isOpen, onClose, community, onU
                   {item.label}
                 </div>
               ))}
-              {i < visibleMenuGroups.length - 1 && <div className="h-[1px] bg-[#1f2023] my-2 mx-2" />}
+              {i < visibleMenuGroups.length - 1 && <div className="hidden md:block h-[1px] bg-[#1f2023] my-2 mx-2 shrink-0" />}
             </div>
           ))}
           {isOwner && (
             <>
-              <div className="h-[1px] bg-[#1f2023] my-2 mx-2" />
+              <div className="hidden md:block h-[1px] bg-[#1f2023] my-2 mx-2 shrink-0" />
               <div 
-                className="px-2 py-1.5 rounded text-[15px] cursor-pointer transition-colors text-red-400 hover:text-white hover:bg-red-500 mt-2 flex items-center justify-between group"
+                className="px-3 py-2 md:px-2 md:py-1.5 rounded text-[14px] md:text-[15px] cursor-pointer transition-colors text-red-400 hover:text-white hover:bg-red-500 md:mt-2 flex items-center gap-2 md:justify-between group whitespace-nowrap shrink-0"
                 onClick={() => {
                   setDeleteConfirmText('');
                   setShowDeleteModal(true);
@@ -1122,16 +1122,16 @@ export default function CommunitySettingsModal({ isOpen, onClose, community, onU
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 bg-[#313338] relative flex flex-col">
+      <div className="flex-1 bg-[#313338] relative flex flex-col w-full h-full">
         {/* ESC Button */}
-        <div className="absolute top-10 right-10 flex flex-col items-center gap-1 cursor-pointer group" onClick={onClose}>
-          <div className="w-9 h-9 rounded-full border-2 border-[#b5bac1] group-hover:border-white flex items-center justify-center transition-colors text-[#b5bac1] group-hover:text-white">
-            <X className="w-5 h-5" />
+        <div className="absolute top-4 right-4 md:top-10 md:right-10 flex flex-col items-center gap-1 cursor-pointer group z-50 bg-[#313338]/80 md:bg-transparent rounded-full p-1 backdrop-blur-sm" onClick={onClose}>
+          <div className="w-8 h-8 md:w-9 md:h-9 rounded-full border-2 border-[#b5bac1] group-hover:border-white flex items-center justify-center transition-colors text-[#b5bac1] group-hover:text-white">
+            <X className="w-4 h-4 md:w-5 md:h-5" />
           </div>
-          <span className="text-xs font-bold text-[#b5bac1] group-hover:text-white">ESC</span>
+          <span className="hidden md:block text-xs font-bold text-[#b5bac1] group-hover:text-white">ESC</span>
         </div>
 
-        <div className="max-w-[740px] w-full pt-14 px-10 overflow-y-auto no-scrollbar pb-20">
+        <div className="max-w-[740px] w-full pt-8 md:pt-14 px-4 md:px-10 overflow-y-auto no-scrollbar pb-24 md:pb-20">
           {renderContent()}
         </div>
 
