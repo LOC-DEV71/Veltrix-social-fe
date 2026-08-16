@@ -3,7 +3,7 @@ import { useParams, useOutletContext } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { io } from 'socket.io-client';
 import { useNavigate } from 'react-router-dom';
-import { Mic, MicOff, Headphones, HeadphoneOff, PhoneOff, Volume2, Sparkles, Signal, SignalHigh, Users, Video, VideoOff, Pin, MonitorUp, MonitorX } from 'lucide-react';
+import { Mic, MicOff, Headphones, HeadphoneOff, PhoneOff, Volume2, Sparkles, Signal, SignalHigh, Users, Video, VideoOff, Pin, MonitorUp, MonitorX, Maximize2, Minimize2 } from 'lucide-react';
 import { useTitle } from '../../hooks/useTitle';
 
 const DEFAULT_ICE_SERVERS = {
@@ -32,6 +32,9 @@ export default function VoiceChannelPage() {
   const [pinnedUser, setPinnedUser] = useState(null); // userId string
   const [showPinnedList, setShowPinnedList] = useState(false);
   const [debugLogs, setDebugLogs] = useState([]);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [fullscreenUserId, setFullscreenUserId] = useState(null); // which user is fullscreen'd
+  const fullscreenContainerRef = useRef(null);
 
   const addDebug = (msg) => {
     console.log(msg);
@@ -48,7 +51,42 @@ export default function VoiceChannelPage() {
   const analyserRefs = useRef({}); // userId -> analyserNode
   const iceServersConfigRef = useRef(DEFAULT_ICE_SERVERS);
 
+  // ======================== FULLSCREEN LOGIC ========================
+  const toggleFullscreen = useCallback((userId, streamEl) => {
+    const container = fullscreenContainerRef.current;
+    if (!container) return;
+
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+      // Enter fullscreen
+      setFullscreenUserId(userId);
+      setIsFullscreen(true);
+      const el = container.querySelector(`[data-fullscreen-id="${userId}"]`) || container;
+      const req = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen;
+      if (req) req.call(el);
+    } else {
+      // Exit fullscreen
+      const exit = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen;
+      if (exit) exit.call(document);
+    }
+  }, []);
+
+  useEffect(() => {
+    const onFsChange = () => {
+      const isFull = !!(document.fullscreenElement || document.webkitFullscreenElement);
+      setIsFullscreen(isFull);
+      if (!isFull) setFullscreenUserId(null);
+    };
+    document.addEventListener('fullscreenchange', onFsChange);
+    document.addEventListener('webkitfullscreenchange', onFsChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', onFsChange);
+      document.removeEventListener('webkitfullscreenchange', onFsChange);
+    };
+  }, []);
+  // ==================================================================
+
   const currentChannel = communityChannels?.find(ch => ch._id === channelId);
+
 
   // Cleanup function
   const cleanup = useCallback(() => {
@@ -697,7 +735,10 @@ export default function VoiceChannelPage() {
         </div>
 
         {/* Connected Users Grid */}
-        <div className={`w-full h-full flex flex-wrap items-center justify-center gap-4 relative ${pinnedUser ? 'bg-black' : ''}`}>
+        <div 
+          ref={fullscreenContainerRef}
+          className={`w-full h-full flex flex-wrap items-center justify-center gap-4 relative ${pinnedUser ? 'bg-black' : ''} ${isFullscreen ? 'bg-black' : ''}`}
+        >
           
           {/* Unpinned View (Normal Grid) */}
           {!pinnedUser && connectedUsers.map(u => {
@@ -718,9 +759,11 @@ export default function VoiceChannelPage() {
             return (
               <div 
                 key={u._id} 
+                data-fullscreen-id={u._id}
+                onDoubleClick={() => toggleFullscreen(u._id)}
                 className={`relative rounded-xl overflow-hidden bg-[#1e1f22] flex items-center justify-center transition-all group ${
                   isSpeaking ? 'ring-[3px] ring-emerald-500' : 'ring-2 ring-transparent'
-                } flex-1 basis-[300px] max-w-[800px] max-h-full aspect-video`}
+                } flex-1 basis-[300px] max-w-[800px] max-h-full aspect-video cursor-pointer`}
               >
                 
                 {hasVideo ? (
@@ -786,14 +829,30 @@ export default function VoiceChannelPage() {
                   </div>
                 )}
                 
-                {/* Pin Button Hover */}
-                <button 
-                  onClick={() => setPinnedUser(u._id)}
-                  className="absolute top-3 right-3 w-8 h-8 bg-black/60 hover:bg-black/80 rounded-full flex items-center justify-center z-20 opacity-0 group-hover:opacity-100 transition-opacity"
-                  title="Ghim video"
-                >
-                  <Pin className="w-4 h-4 text-white" />
-                </button>
+                {/* Top-right action buttons */}
+                <div className="absolute top-3 right-3 flex gap-1.5 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
+                  {/* Fullscreen Button */}
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); toggleFullscreen(u._id); }}
+                    className="w-8 h-8 bg-black/60 hover:bg-black/80 rounded-full flex items-center justify-center"
+                    title="Xem toàn màn hình"
+                  >
+                    <Maximize2 className="w-4 h-4 text-white" />
+                  </button>
+                  {/* Pin Button */}
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setPinnedUser(u._id); }}
+                    className="w-8 h-8 bg-black/60 hover:bg-black/80 rounded-full flex items-center justify-center"
+                    title="Ghim video"
+                  >
+                    <Pin className="w-4 h-4 text-white" />
+                  </button>
+                </div>
+
+                {/* Mobile tap hint */}
+                <div className="absolute top-3 left-3 bg-black/50 px-2 py-0.5 rounded text-[10px] text-white/60 opacity-0 group-hover:opacity-100 transition-opacity md:hidden">
+                  2x chạm để toàn màn hình
+                </div>
               </div>
             );
           })}
@@ -872,14 +931,25 @@ export default function VoiceChannelPage() {
                       </div>
                     </div>
 
-                    {/* Unpin button */}
-                    <button 
-                      onClick={() => setPinnedUser(null)}
-                      className="absolute top-6 right-6 w-12 h-12 bg-black/60 hover:bg-black/80 rounded-full flex items-center justify-center z-30 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
-                      title="Bỏ ghim"
-                    >
-                      <Pin className="w-6 h-6 text-white" />
-                    </button>
+                    {/* Top-right action buttons for pinned view */}
+                    <div className="absolute top-6 right-6 z-30 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {/* Fullscreen toggle */}
+                      <button 
+                        onClick={() => toggleFullscreen(u._id)}
+                        className="w-12 h-12 bg-black/60 hover:bg-black/80 rounded-full flex items-center justify-center shadow-lg"
+                        title={isFullscreen ? 'Thoát toàn màn hình' : 'Toàn màn hình'}
+                      >
+                        {isFullscreen ? <Minimize2 className="w-6 h-6 text-white" /> : <Maximize2 className="w-6 h-6 text-white" />}
+                      </button>
+                      {/* Unpin button */}
+                      <button 
+                        onClick={() => setPinnedUser(null)}
+                        className="w-12 h-12 bg-black/60 hover:bg-black/80 rounded-full flex items-center justify-center shadow-lg"
+                        title="Bỏ ghim"
+                      >
+                        <Pin className="w-6 h-6 text-white" />
+                      </button>
+                    </div>
                   </div>
                 );
               })()}
