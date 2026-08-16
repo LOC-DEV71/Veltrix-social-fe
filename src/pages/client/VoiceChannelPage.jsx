@@ -52,29 +52,42 @@ export default function VoiceChannelPage() {
   const iceServersConfigRef = useRef(DEFAULT_ICE_SERVERS);
 
   // ======================== FULLSCREEN LOGIC ========================
-  const toggleFullscreen = useCallback((userId, streamEl) => {
+  const toggleFullscreen = useCallback((userId) => {
+    // Thử native Fullscreen API trước (Android/Desktop)
     const container = fullscreenContainerRef.current;
-    if (!container) return;
-
-    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-      // Enter fullscreen
+    const supportsFullscreen = !!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen);
+    
+    if (isFullscreen) {
+      // Exit fullscreen
+      if (document.fullscreenElement || document.webkitFullscreenElement) {
+        const exit = document.exitFullscreen || document.webkitExitFullscreen;
+        if (exit) exit.call(document);
+      } else {
+        // CSS pseudo-fullscreen exit (iOS)
+        setIsFullscreen(false);
+        setFullscreenUserId(null);
+      }
+    } else {
       setFullscreenUserId(userId);
       setIsFullscreen(true);
-      const el = container.querySelector(`[data-fullscreen-id="${userId}"]`) || container;
-      const req = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen;
-      if (req) req.call(el);
-    } else {
-      // Exit fullscreen
-      const exit = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen;
-      if (exit) exit.call(document);
+      if (supportsFullscreen && container) {
+        const el = container.querySelector(`[data-fullscreen-id="${userId}"]`) || container;
+        const req = el.requestFullscreen || el.webkitRequestFullscreen;
+        if (req) req.call(el).catch(() => {
+          // Nếu browser từ chối (iOS) → dùng CSS pseudo-fullscreen
+        });
+      }
+      // iOS sẽ dùng CSS pseudo-fullscreen (isFullscreen + fullscreenUserId state)
     }
-  }, []);
+  }, [isFullscreen]);
 
   useEffect(() => {
     const onFsChange = () => {
       const isFull = !!(document.fullscreenElement || document.webkitFullscreenElement);
-      setIsFullscreen(isFull);
-      if (!isFull) setFullscreenUserId(null);
+      if (!isFull) {
+        setIsFullscreen(false);
+        setFullscreenUserId(null);
+      }
     };
     document.addEventListener('fullscreenchange', onFsChange);
     document.addEventListener('webkitfullscreenchange', onFsChange);
@@ -703,6 +716,60 @@ export default function VoiceChannelPage() {
 
   return (
     <div className="flex-1 flex flex-col bg-[#000000] h-full relative">
+
+      {/* iOS CSS Pseudo-Fullscreen Overlay */}
+      {isFullscreen && fullscreenUserId && (() => {
+        const u = connectedUsers.find(u => u._id === fullscreenUserId);
+        if (!u) return null;
+        const isMe = u._id === user?._id;
+        const isMyScreen = u._id === `${user?._id}_screen`;
+        const userStream = isMe ? localStreamRef.current 
+                         : isMyScreen ? localScreenStreamRef.current 
+                         : remoteStreams[u._id];
+        const hasVideo = (isMe && isVideoOn) || (isMyScreen && isScreenSharing) || u.isScreen || remoteStates[u._id]?.isVideoOn;
+        const avatar = u.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.displayName || u.username || 'U')}&background=5865f2&color=fff`;
+
+        return (
+          <div 
+            className="fixed inset-0 z-[9999] bg-black flex items-center justify-center"
+            style={{ touchAction: 'none' }}
+          >
+            {hasVideo ? (
+              <video
+                autoPlay playsInline
+                muted={isMe || isDeafened}
+                ref={video => {
+                  if (video && video.srcObject !== userStream) {
+                    video.srcObject = userStream;
+                    video.play().catch(() => {});
+                  }
+                }}
+                className="w-full h-full object-contain"
+              />
+            ) : (
+              <img src={avatar} alt={u.username} className="w-40 h-40 rounded-full object-cover" />
+            )}
+
+            {/* Name */}
+            <div className="absolute bottom-28 left-5 bg-black/60 px-3 py-1.5 rounded-lg flex items-center gap-2">
+              <span className={`text-base font-semibold ${u.isPremium ? 'text-[#f47fff]' : 'text-white'}`}>
+                {u.displayName || u.username}
+              </span>
+              {u.isPremium && <Sparkles className="w-4 h-4 text-[#f47fff]" />}
+            </div>
+
+            {/* Exit fullscreen button */}
+            <button
+              onClick={() => toggleFullscreen(fullscreenUserId)}
+              className="absolute top-5 right-5 w-12 h-12 bg-black/70 rounded-full flex items-center justify-center shadow-xl"
+              title="Thoát toàn màn hình"
+            >
+              <Minimize2 className="w-6 h-6 text-white" />
+            </button>
+          </div>
+        );
+      })()}
+
       {/* Header */}
       <div className="h-12 border-b border-[#1f2023] bg-[#313338] flex items-center px-4 shrink-0 z-10">
         <Volume2 className="w-5 h-5 text-[#80848e] mr-2" />
@@ -829,12 +896,12 @@ export default function VoiceChannelPage() {
                   </div>
                 )}
                 
-                {/* Top-right action buttons */}
-                <div className="absolute top-3 right-3 flex gap-1.5 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
+                {/* Top-right action buttons — always visible on mobile, hover on desktop */}
+                <div className="absolute top-2 right-2 flex gap-1.5 z-20 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                   {/* Fullscreen Button */}
                   <button 
                     onClick={(e) => { e.stopPropagation(); toggleFullscreen(u._id); }}
-                    className="w-8 h-8 bg-black/60 hover:bg-black/80 rounded-full flex items-center justify-center"
+                    className="w-9 h-9 bg-black/70 hover:bg-black/90 rounded-full flex items-center justify-center shadow-lg"
                     title="Xem toàn màn hình"
                   >
                     <Maximize2 className="w-4 h-4 text-white" />
@@ -842,16 +909,11 @@ export default function VoiceChannelPage() {
                   {/* Pin Button */}
                   <button 
                     onClick={(e) => { e.stopPropagation(); setPinnedUser(u._id); }}
-                    className="w-8 h-8 bg-black/60 hover:bg-black/80 rounded-full flex items-center justify-center"
+                    className="w-9 h-9 bg-black/70 hover:bg-black/90 rounded-full flex items-center justify-center shadow-lg"
                     title="Ghim video"
                   >
                     <Pin className="w-4 h-4 text-white" />
                   </button>
-                </div>
-
-                {/* Mobile tap hint */}
-                <div className="absolute top-3 left-3 bg-black/50 px-2 py-0.5 rounded text-[10px] text-white/60 opacity-0 group-hover:opacity-100 transition-opacity md:hidden">
-                  2x chạm để toàn màn hình
                 </div>
               </div>
             );
