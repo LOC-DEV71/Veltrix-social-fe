@@ -498,7 +498,7 @@ export default function UserSettingsModal({ isOpen, onClose, initialTab = 'accou
                   </select>
                 </div>
                 
-                <div className="flex gap-8">
+                <div className="flex flex-col-reverse md:flex-row gap-8">
                   <div className="flex-1">
                     <div className="space-y-6">
                       <div>
@@ -544,7 +544,7 @@ export default function UserSettingsModal({ isOpen, onClose, initialTab = 'accou
                   </div>
                   
                   {/* Server Profile Preview */}
-                  <div className="w-[340px] shrink-0 flex flex-col gap-6">
+                  <div className="w-full md:w-[340px] shrink-0 flex flex-col gap-6">
                     <div>
                       <h4 className="text-[#b5bac1] text-[11px] font-bold uppercase tracking-wider mb-2">Xem trước trong máy chủ</h4>
                       <div className="bg-[#111214] rounded-lg border border-[#1f2023] p-0 overflow-hidden shadow-lg w-full">
@@ -625,7 +625,7 @@ export default function UserSettingsModal({ isOpen, onClose, initialTab = 'accou
              )}
 
             {/* Content 2 Columns */}
-            <div className="flex gap-8">
+            <div className="flex flex-col-reverse md:flex-row gap-8">
               {/* Left Column - Forms */}
               <div className="flex-1">
                 <div className="space-y-6">
@@ -756,8 +756,8 @@ export default function UserSettingsModal({ isOpen, onClose, initialTab = 'accou
                 </div>
               </div>
 
-              {/* Right Column - Previews */}
-              <div className="w-[340px] shrink-0 flex flex-col gap-6">
+              {/* Right Column - Preview */}
+              <div className="w-full md:w-[340px] shrink-0 flex flex-col gap-6">
                 <div>
                   <h4 className="text-[#b5bac1] text-[11px] font-bold uppercase tracking-wider mb-2">Xem trước</h4>
                   <div className="bg-[#111214] rounded-lg border border-[#1f2023] overflow-hidden shadow-lg w-full p-1"

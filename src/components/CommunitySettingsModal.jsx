@@ -447,7 +447,7 @@ export default function CommunitySettingsModal({ isOpen, onClose, community, onU
   const renderContent = () => {
     if (activeTab === 'profile') {
       return (
-        <div className="flex gap-8">
+        <div className="flex flex-col-reverse md:flex-row gap-8">
           {/* Left Side: Form */}
           <div className="flex-1 space-y-6">
             <div>
@@ -524,7 +524,7 @@ export default function CommunitySettingsModal({ isOpen, onClose, community, onU
           </div>
 
           {/* Right Side: Preview Card */}
-          <div className="w-[300px] shrink-0">
+          <div className="w-full md:w-[300px] shrink-0">
             <div className="bg-[#111214] rounded-lg overflow-hidden border border-[#1f2023]">
               <div className={`h-[120px] relative ${!banner ? 'bg-gradient-to-br from-gray-700 to-gray-900' : ''}`}>
                 {banner && (
