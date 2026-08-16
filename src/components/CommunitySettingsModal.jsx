@@ -302,18 +302,19 @@ export default function CommunitySettingsModal({ isOpen, onClose, community, onU
       setLoading(true);
       setKickError('');
       const res = await axiosClient.delete(`/api/communities/${community._id}/members/${memberId}`);
-      if (res.data.success) {
-        // Remove from local state
-        const updatedMembers = fullCommunity.members.filter(m => {
-          const mId = typeof m.user === 'object' ? m.user._id : m.user;
-          return mId !== memberId;
+      if (res.data && res.data.success) {
+        // Remove from local state safely
+        const updatedMembers = (fullCommunity?.members || []).filter(m => {
+          if (!m || !m.user) return true; // keep others if malformed? actually, maybe return false to clean them up. Let's return false.
+          const mId = (typeof m.user === 'object' && m.user !== null) ? (m.user._id || m.user.id) : m.user;
+          return String(mId) !== String(memberId);
         });
-        setFullCommunity({ ...fullCommunity, members: updatedMembers });
+        setFullCommunity(prev => ({ ...prev, members: updatedMembers }));
         setSelectedModMember(null); // Close the panel since member is gone
         setKickTarget(null); // Close modal
       }
     } catch (error) {
-      console.error(error);
+      console.error('Kick Error:', error);
       setKickError(error.response?.data?.message || 'Lỗi khi đuổi thành viên');
     } finally {
       setLoading(false);
