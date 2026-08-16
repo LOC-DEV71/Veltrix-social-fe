@@ -1136,10 +1136,12 @@ export default function AppLayout() {
                     key={memberUser._id || idx}
                     onClick={(e) => {
                       const rect = e.currentTarget.getBoundingClientRect();
-                      setProfileModalPos({
-                        top: `${Math.min(rect.top, window.innerHeight - 400)}px`,
-                        right: '256px',
-                      });
+                      const isMobile = window.innerWidth < 768;
+                      setProfileModalPos(
+                        isMobile 
+                          ? { top: '50%', left: '50%', transform: 'translate(-50%, -50%)', right: 'auto' }
+                          : { top: `${Math.min(rect.top, window.innerHeight - 400)}px`, right: `${window.innerWidth - rect.left + 8}px` }
+                      );
                       setShowProfile(false);
                       setSelectedProfileUser({
                         _id: memberUser._id,

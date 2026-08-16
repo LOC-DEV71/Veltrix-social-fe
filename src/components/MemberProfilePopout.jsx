@@ -94,7 +94,7 @@ export default function MemberProfilePopout({ isOpen, onClose, member, position,
     <div className="fixed inset-0 z-[110] pointer-events-none">
       <div
         ref={popoutRef}
-        className="absolute w-[340px] rounded-lg shadow-2xl pointer-events-auto border border-[#1f2023]"
+        className="absolute w-[340px] max-w-[calc(100vw-32px)] rounded-lg shadow-2xl pointer-events-auto border border-[#1f2023]"
         style={{ 
           ...popoutStyle,
           padding: hasTheme ? '4px' : '0px',
