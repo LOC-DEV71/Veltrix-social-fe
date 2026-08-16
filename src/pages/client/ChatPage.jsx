@@ -492,7 +492,11 @@ export default function ChatPage() {
   }, [showExpressionPicker]);
 
   const onEmojiClick = (emojiObject) => {
-    setInputText(prev => prev + emojiObject.emoji);
+    if (emojiObject.isCustom) {
+      setInputText(prev => prev + `<e:${emojiObject.names[0]}:${emojiObject.imageUrl}>`);
+    } else {
+      setInputText(prev => prev + emojiObject.emoji);
+    }
   };
 
   const handleSendSticker = (stickerUrl) => {
@@ -654,10 +658,18 @@ export default function ChatPage() {
 
   const renderMessageContent = (content) => {
     if (!content) return null;
-    const parts = content.split(/(@everyone|@[^\s]+|https?:\/\/[^\s]+)/g);
+    const parts = content.split(/(<e:[^:]+:[^>]+>|@everyone|@[^\s]+|https?:\/\/[^\s]+)/g);
 
     return parts.map((part, i) => {
       if (!part) return null;
+      if (part.startsWith('<e:') && part.endsWith('>')) {
+        const match = part.match(/<e:([^:]+):(.+)>/);
+        if (match) {
+          const name = match[1];
+          const url = match[2];
+          return <img key={i} src={url} alt={`:${name}:`} title={`:${name}:`} className="w-6 h-6 inline-block mx-0.5 align-middle object-contain" />;
+        }
+      }
       if (part === '@everyone' || part.startsWith('@')) {
         return <span key={i} className="bg-indigo-500/40 text-indigo-200 font-bold px-1.5 py-0.5 rounded mx-[1px]">{part}</span>;
       }
