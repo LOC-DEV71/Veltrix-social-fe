@@ -103,7 +103,8 @@ export default function VoiceChannelPage() {
     let isMounted = true;
 
     const socket = io(import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000', {
-      auth: { token: localStorage.getItem('token') }
+      auth: { token: localStorage.getItem('token') },
+      transports: ['websocket', 'polling']
     });
     socketRef.current = socket;
 
