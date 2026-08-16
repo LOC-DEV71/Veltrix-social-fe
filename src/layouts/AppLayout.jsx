@@ -1448,6 +1448,7 @@ export default function AppLayout() {
         if (!ctxComm || !user) return null; // Guard: không render nếu chưa có data
         const isOwnerCtx = ctxComm && String(ctxComm.owner?._id || ctxComm.owner) === String(user?._id);
         const myRoleMember = ctxComm?.members?.find(m => {
+          if (!m || !m.user) return false;
           const uid = typeof m.user === 'object' ? (m.user._id || m.user.id) : m.user;
           const isSameId = String(uid) === String(user?._id);
           const isSameUsername = typeof m.user === 'object' && m.user.username === user?.username;
