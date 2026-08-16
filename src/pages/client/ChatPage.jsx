@@ -101,11 +101,13 @@ export default function ChatPage() {
   useLayoutEffect(() => {
     if (scrollPreservationRef.current.isPrepending && chatFeedRef.current) {
       const container = chatFeedRef.current;
-      const heightDifference = container.scrollHeight - scrollPreservationRef.current.previousScrollHeight;
-      container.scrollTop = scrollPreservationRef.current.previousScrollTop + heightDifference;
-      
-      scrollPreservationRef.current.isPrepending = false;
-      isLoadingMoreRef.current = false;
+      requestAnimationFrame(() => {
+        const heightDifference = container.scrollHeight - scrollPreservationRef.current.previousScrollHeight;
+        container.scrollTop = scrollPreservationRef.current.previousScrollTop + heightDifference;
+        
+        scrollPreservationRef.current.isPrepending = false;
+        isLoadingMoreRef.current = false;
+      });
     } else if (!isLoadingMoreRef.current && !isJumpingRef.current) {
       scrollToBottom();
     }
@@ -493,7 +495,8 @@ export default function ChatPage() {
 
   const onEmojiClick = (emojiObject) => {
     if (emojiObject.isCustom) {
-      setInputText(prev => prev + `:${emojiObject.names[0]}: `);
+      const name = (emojiObject.names && emojiObject.names[0]) || emojiObject.id || emojiObject.name;
+      setInputText(prev => prev + `:${name}: `);
     } else {
       setInputText(prev => prev + emojiObject.emoji);
     }
@@ -545,7 +548,7 @@ export default function ChatPage() {
     // Process custom emojis: convert :name: to <e:name:url>
     let processedText = inputText.trim();
     if (processedText) {
-      const emojiRegex = /:([a-zA-Z0-9_]+):/g;
+      const emojiRegex = /:([^:\s]+):/g;
       processedText = processedText.replace(emojiRegex, (match, name) => {
         for (const comm of myCommunities) {
           if (comm.emojis) {
@@ -1068,14 +1071,16 @@ export default function ChatPage() {
                       </div>
                     </div>
                   ) : (
-                    msg.content && (
+                    (msg.isSticker || (msg.content && msg.content.startsWith('https://res.cloudinary.com/') && msg.content.includes('/vetrix_products/'))) ? (
+                      <img src={msg.content} alt="sticker" className="max-w-[160px] max-h-[160px] object-contain my-1" />
+                    ) : msg.content ? (
                       <p className={`text-[15px] leading-[1.375rem] text-[#dbdee1] whitespace-pre-wrap break-words inline-block ${msg.isTemp ? 'opacity-70' : ''}`}>
                         {renderMessageContent(msg.content)}
                         {msg.isEdited && <span className="text-[10px] text-[#949ba4] ml-1">(đã chỉnh sửa)</span>}
                       </p>
-                    )
+                    ) : null
                   )}
-                  {msg.linkMetadata && <LinkPreview linkMetadata={msg.linkMetadata} />}
+                  {msg.linkMetadata && !msg.isSticker && <LinkPreview linkMetadata={msg.linkMetadata} />}
                   {msg.attachments && msg.attachments.length > 0 && (
                     <div className="flex flex-wrap gap-2 mt-1">
                       {msg.attachments.map((att, i) => (

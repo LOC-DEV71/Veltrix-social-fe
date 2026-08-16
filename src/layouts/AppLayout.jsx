@@ -244,7 +244,10 @@ export default function AppLayout() {
     if (!user?._id) return;
 
     const socket = io(API_BASE_URL, {
-      auth: { token: localStorage.getItem('token') }
+      transports: ['websocket'],
+      auth: {
+        token: localStorage.getItem('token')
+      }
     });
 
     const handleConnect = () => {

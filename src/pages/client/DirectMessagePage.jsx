@@ -367,10 +367,14 @@ export default function DirectMessagePage() {
                             {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </span>
                         </div>
-                        <p className="text-sm text-[#dbdee1] whitespace-pre-wrap break-words leading-relaxed">
-                          {renderMessageContent(msg.content)}
-                        </p>
-                        {msg.linkMetadata && <LinkPreview linkMetadata={msg.linkMetadata} />}
+                        {(msg.isSticker || (msg.content && msg.content.startsWith('https://res.cloudinary.com/') && msg.content.includes('/vetrix_products/'))) ? (
+                          <img src={msg.content} alt="sticker" className="max-w-[160px] max-h-[160px] object-contain my-1" />
+                        ) : (
+                          <p className="text-sm text-[#dbdee1] whitespace-pre-wrap break-words leading-relaxed">
+                            {renderMessageContent(msg.content)}
+                          </p>
+                        )}
+                        {msg.linkMetadata && !(msg.isSticker || (msg.content && msg.content.startsWith('https://res.cloudinary.com/') && msg.content.includes('/vetrix_products/'))) && <LinkPreview linkMetadata={msg.linkMetadata} />}
                       </div>
                     </div>
                   );

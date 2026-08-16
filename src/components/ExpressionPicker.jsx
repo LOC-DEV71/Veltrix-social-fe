@@ -60,12 +60,14 @@ export default function ExpressionPicker({ onEmojiClick, onStickerClick, initial
       
       {/* Header Tabs */}
       <div className="flex items-center px-4 pt-3 pb-2 gap-4 border-b border-[#1f2023]/50">
-        {['Ảnh động', 'Sticker', 'Emoji'].map(tab => (
+        {['Ảnh động', 'Sticker', 'Emoji', 'Emoji động'].map(tab => (
           <button
             key={tab}
-            onClick={() => setActiveTab(tab === 'Emoji' ? 'emoji' : 'sticker')}
+            onClick={() => setActiveTab(tab === 'Emoji' ? 'emoji' : tab === 'Emoji động' ? 'emoji_dong' : 'sticker')}
             className={`font-semibold text-sm transition-colors ${
-              (activeTab === 'emoji' && tab === 'Emoji') || (activeTab === 'sticker' && tab === 'Sticker')
+              (activeTab === 'emoji' && tab === 'Emoji') || 
+              (activeTab === 'sticker' && tab === 'Sticker') ||
+              (activeTab === 'emoji_dong' && tab === 'Emoji động')
                 ? 'text-[#dbdee1] bg-[#404249] px-3 py-1 rounded-md'
                 : 'text-[#b5bac1] hover:text-[#dbdee1] px-3 py-1'
             }`}
@@ -104,6 +106,129 @@ export default function ExpressionPicker({ onEmojiClick, onStickerClick, initial
             width="100%"
             height="100%"
           />
+        </div>
+      ) : activeTab === 'emoji_dong' ? (
+        <div className="flex flex-col flex-1 min-h-0">
+          {/* Search Bar */}
+          <div className="px-4 py-3">
+            <div className="bg-[#1e1f22] rounded flex items-center px-2 py-1.5 focus-within:ring-1 focus-within:ring-[#00a8fc]">
+              <input 
+                type="text"
+                placeholder="Tìm kiếm emoji động"
+                className="bg-transparent text-sm text-[#dbdee1] placeholder-[#949ba4] focus:outline-none w-full px-1"
+              />
+              <Search className="w-4 h-4 text-[#949ba4]" />
+            </div>
+          </div>
+
+          {/* Body */}
+          <div className="flex flex-1 min-h-0">
+            {/* Sidebar */}
+            <div className="w-[48px] bg-[#2b2d31] flex flex-col items-center py-2 gap-2 overflow-y-auto no-scrollbar border-r border-[#1f2023]/30">
+              {STICKER_CATEGORIES.filter(cat => cat.id !== 'recent' && cat.id !== 'custom').map(cat => (
+                <div 
+                  key={cat.id}
+                  onClick={() => setActiveCategory(cat.id)}
+                  className={`w-8 h-8 flex items-center justify-center rounded-[16px] cursor-pointer transition-all duration-200 ${
+                    activeCategory === cat.id ? 'bg-[#5865F2] text-white rounded-[10px]' : 'bg-[#313338] text-[#b5bac1] hover:bg-[#404249] hover:text-white hover:rounded-[10px]'
+                  }`}
+                  title={cat.name}
+                >
+                  {cat.icon}
+                </div>
+              ))}
+            </div>
+
+            {/* Grid */}
+            <div className="flex-1 bg-[#2b2d31] flex flex-col min-h-0 relative">
+              <div className="flex-1 overflow-y-auto p-3 no-scrollbar pb-[60px]">
+                {activeCategory.startsWith('community_') && (() => {
+                  const activeComm = allComms.find(c => `community_${c._id}` === activeCategory);
+                  if (!activeComm) return null;
+                  
+                  const requiresPremium = !user?.isPremium;
+                  const animatedEmojis = activeComm.emojis ? activeComm.emojis.filter(e => e.url && e.url.endsWith('.gif')) : [];
+                  const hasAnimatedEmojis = animatedEmojis.length > 0;
+                  
+                  if (!requiresPremium && hasAnimatedEmojis) {
+                    return (
+                      <>
+                        <div className="text-[#b5bac1] font-semibold text-xs mb-3 flex items-center gap-1">
+                          <ImageIcon className="w-3.5 h-3.5" /> Emoji động {activeComm.name}
+                        </div>
+                        <div className="grid grid-cols-4 gap-2">
+                          {animatedEmojis.map((emoji, idx) => (
+                            <div 
+                              key={idx} 
+                              onClick={() => onEmojiClick({ isCustom: true, name: emoji.name, id: emoji._id, names: [emoji.name] })}
+                              onMouseEnter={() => setHoveredSticker({ ...emoji, pack: activeComm.name })}
+                              onMouseLeave={() => setHoveredSticker(null)}
+                              className="aspect-square bg-transparent rounded hover:bg-[#383a40] cursor-pointer transition-colors p-1 flex items-center justify-center group"
+                            >
+                              <img src={emoji.url} alt="emoji" className="w-8 h-8 object-contain group-hover:scale-110 transition-transform duration-200" />
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    );
+                  }
+
+                  return (
+                    <div className="flex flex-col items-center justify-center h-full text-center px-4">
+                      <div className="w-16 h-16 rounded-full bg-[#2b2d31] border-2 border-[#1f2023] flex items-center justify-center mb-4 overflow-hidden relative">
+                        {activeComm.icon ? (
+                          <img src={activeComm.icon} alt={activeComm.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full bg-[#5865F2] flex items-center justify-center text-xl font-bold text-white">
+                            {activeComm.name.charAt(0)}
+                          </div>
+                        )}
+                        {requiresPremium && (
+                          <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-[#f47f1a] rounded-full flex items-center justify-center shadow-lg">
+                            <Lock className="w-3.5 h-3.5 text-white" />
+                          </div>
+                        )}
+                      </div>
+                      <h3 className="text-white font-semibold mb-2">Emoji động {activeComm.name}</h3>
+                      <p className="text-[#b5bac1] text-xs mb-4">
+                        {requiresPremium
+                          ? 'Sử dụng emoji động yêu cầu Vetrix Premium.'
+                          : 'Chưa có emoji động nào được thêm vào cộng đồng này.'}
+                      </p>
+                      {requiresPremium && (
+                        <button className="bg-[#f47f1a] hover:bg-[#d67017] text-white px-4 py-2 rounded font-semibold text-sm transition-colors flex items-center gap-2">
+                          <Crown className="w-4 h-4" /> Nâng cấp Premium
+                        </button>
+                      )}
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* Hover Info Footer */}
+              <div className="absolute bottom-0 left-0 right-0 h-[56px] bg-[#2b2d31] border-t border-[#1f2023]/50 flex items-center px-4 gap-3">
+                {hoveredSticker ? (
+                  <>
+                    <img src={hoveredSticker.url} alt="preview" className="w-10 h-10 object-contain rounded" />
+                    <div className="flex flex-col">
+                      <span className="text-white text-sm font-semibold">{hoveredSticker.name}</span>
+                      <span className="text-[#b5bac1] text-xs">từ {hoveredSticker.pack}</span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-10 h-10 border border-dashed border-[#1f2023] rounded flex items-center justify-center opacity-50">
+                      <ImageIcon className="w-4 h-4 text-[#949ba4]"/>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-white/50 text-sm font-semibold">Chọn một emoji động</span>
+                      <span className="text-[#b5bac1]/50 text-xs">để chèn vào tin nhắn</span>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       ) : (
         <div className="flex flex-col flex-1 min-h-0">
