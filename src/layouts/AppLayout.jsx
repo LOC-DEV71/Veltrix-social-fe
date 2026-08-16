@@ -68,6 +68,7 @@ export default function AppLayout() {
   const [onlineUserIds, setOnlineUserIds] = useState(new Set());
   const [profileModalPos, setProfileModalPos] = useState({ bottom: '64px', left: '80px' });
   const [showCreateCommunity, setShowCreateCommunity] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   
   const [unreadMentions, setUnreadMentions] = useState({ community: {}, channel: {} });
   const [unreadMessages, setUnreadMessages] = useState({ community: {}, channel: {} });
@@ -110,6 +111,9 @@ export default function AppLayout() {
         });
       }
     }
+    
+    // Đóng sidebar trên mobile mỗi khi chuyển trang
+    setIsMobileSidebarOpen(false);
   }, [location.pathname, unreadDMs]);
 
   useEffect(() => {
@@ -433,8 +437,22 @@ export default function AppLayout() {
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-[#313338] text-[#dbdee1] font-sans antialiased select-none">
       
-      {/* 🔴 CỘT 1: SERVER LIST */}
-      <div className="w-[72px] bg-[#1e1f22] flex flex-col items-center py-3 space-y-2 shrink-0 z-10">
+      {/* 📱 Mobile Backdrop */}
+      {isMobileSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/60 z-40 md:hidden transition-opacity"
+          onClick={() => setIsMobileSidebarOpen(false)}
+        />
+      )}
+
+      {/* 📦 Sidebar Container (Drawer on Mobile, Static on Desktop) */}
+      <div 
+        className={`fixed md:static inset-y-0 left-0 z-50 flex h-full transition-transform duration-300 ease-in-out md:translate-x-0 ${
+          isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        {/* 🔴 CỘT 1: SERVER LIST */}
+        <div className="w-[72px] bg-[#1e1f22] flex flex-col items-center py-3 space-y-2 shrink-0 z-10">
         <div 
           onClick={handleBackToDM}
           className={`group relative flex items-center justify-center w-12 h-12 rounded-[24px] hover:rounded-[16px] transition-all duration-300 cursor-pointer mb-2 ${
@@ -965,6 +983,8 @@ export default function AppLayout() {
           </div>
         </div>
       </div>
+      </div>
+      {/* --- Kết thúc Sidebar Container --- */}
 
       {/* 🔵 CỘT 3: MAIN AREA */}
       <div className="flex-1 flex flex-col bg-[#313338] h-full min-w-0 z-1 relative">
@@ -985,8 +1005,20 @@ export default function AppLayout() {
         )}
 
         {/* Top Header */}
-        <div className="h-12 border-b border-[#1f2023] flex items-center justify-between px-4 shrink-0 shadow-sm bg-[#313338]">
-          <div className="flex items-center space-x-2 font-bold text-white">
+        <div className="h-12 border-b border-[#1f2023] flex items-center justify-between px-3 md:px-4 shrink-0 shadow-sm bg-[#313338]">
+          <div className="flex items-center space-x-2 font-bold text-white min-w-0">
+            {/* Hamburger Button (Mobile Only) */}
+            <button 
+              className="md:hidden mr-2 p-1 text-[#949ba4] hover:text-white transition-colors flex-shrink-0"
+              onClick={() => setIsMobileSidebarOpen(true)}
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+              </svg>
+            </button>
+            
             {location.pathname === '/shop' ? (
               <>
                 <ShoppingBag className="w-6 h-6 text-pink-400" />
@@ -1043,14 +1075,29 @@ export default function AppLayout() {
 
         {/* Content Outlet */}
         <div className="flex-grow overflow-hidden">
-          <Outlet context={{ selectedCommunity, communityMembers, myCommunities, communityChannels, onlineUserIds, handleSelectCommunity }} />
+          <Outlet context={{ 
+            selectedCommunity, 
+            communityMembers, 
+            myCommunities, 
+            communityChannels, 
+            onlineUserIds, 
+            handleSelectCommunity,
+            toggleMobileSidebar: () => setIsMobileSidebarOpen(true)
+          }} />
         </div>
       </div>
 
       {/* 🟡 CỘT 4: MEMBER LIST (Only when in community channels) */}
       {showMembers && !location.pathname.startsWith('/dm/') && (
-        <div className="w-[240px] bg-[#2b2d31] flex flex-col shrink-0 border-l border-[#1f2023]/30 h-full hidden lg:flex">
-          <div className="flex-1 overflow-y-auto px-2 py-4 space-y-4 no-scrollbar">
+        <>
+          {/* Mobile Backdrop for Members */}
+          <div 
+            className="fixed inset-0 bg-black/60 z-40 lg:hidden transition-opacity" 
+            onClick={() => setShowMembers(false)} 
+          />
+          
+          <div className="fixed lg:static right-0 inset-y-0 z-50 w-[240px] bg-[#2b2d31] flex flex-col shrink-0 border-l border-[#1f2023]/30 h-full shadow-2xl lg:shadow-none transition-transform duration-300">
+            <div className="flex-1 overflow-y-auto px-2 py-4 space-y-4 no-scrollbar">
             {!selectedCommunity ? (
               <div className="flex flex-col items-center justify-center h-full px-2">
                 <p className="text-center text-[#949ba4] text-sm px-4">
@@ -1177,9 +1224,10 @@ export default function AppLayout() {
             })()}
           </div>
         </div>
+      </>
       )}
 
-      {/* Personal Profile Modal (Bottom left toggle) */}
+      {/* Profile Popout when clicking a user */}
       <UserProfileModal 
         isOpen={showProfile} 
         onClose={() => setShowProfile(false)} 
