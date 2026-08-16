@@ -1,6 +1,7 @@
 export const checkPermission = (channel, memberId, memberRole, permissionId) => {
   if (memberRole === 'owner' || memberRole === 'admin') return true;
-  if (!channel || !channel.permissionOverwrites) return true;
+  if (!channel) return true;
+  const overwrites = channel.permissionOverwrites || [];
 
   let isAllowed = true;
   
@@ -14,19 +15,19 @@ export const checkPermission = (channel, memberId, memberRole, permissionId) => 
     isAllowed = true;
   }
 
-  const everyoneOverwrite = channel.permissionOverwrites.find(o => o.id === 'everyone');
+  const everyoneOverwrite = overwrites.find(o => o.id === 'everyone');
   if (everyoneOverwrite) {
     if (everyoneOverwrite.deny && everyoneOverwrite.deny.includes(permissionId)) isAllowed = false;
     if (everyoneOverwrite.allow && everyoneOverwrite.allow.includes(permissionId)) isAllowed = true;
   }
 
-  const roleOverwrite = channel.permissionOverwrites.find(o => o.id === memberRole);
+  const roleOverwrite = overwrites.find(o => o.id === memberRole);
   if (roleOverwrite) {
     if (roleOverwrite.deny && roleOverwrite.deny.includes(permissionId)) isAllowed = false;
     if (roleOverwrite.allow && roleOverwrite.allow.includes(permissionId)) isAllowed = true;
   }
 
-  const memberOverwrite = channel.permissionOverwrites.find(o => o.id === String(memberId));
+  const memberOverwrite = overwrites.find(o => o.id === String(memberId));
   if (memberOverwrite) {
     if (memberOverwrite.deny && memberOverwrite.deny.includes(permissionId)) isAllowed = false;
     if (memberOverwrite.allow && memberOverwrite.allow.includes(permissionId)) isAllowed = true;

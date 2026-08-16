@@ -810,11 +810,15 @@ export default function AppLayout() {
                       const canCreateInvite = checkPermission(ch, userId, myRole, 'create_invite');
                       const canManageChannel = checkPermission(ch, userId, myRole, 'manage_channel');
                       
+                      const isSelected = selectedChannel?._id === ch._id;
+                      
                       return (
-                        <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className={`flex items-center space-x-1 transition-opacity ${
+                          isSelected ? 'opacity-100 pointer-events-auto' : 'opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto'
+                        }`}>
                           {canCreateInvite && (
                             <UserPlus 
-                              className="w-3.5 h-3.5 text-[#b5bac1] hover:text-[#dbdee1]" 
+                              className="w-3.5 h-3.5 text-[#b5bac1] hover:text-[#dbdee1] pointer-events-auto" 
                               title="Tạo Lời mời"
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -824,7 +828,7 @@ export default function AppLayout() {
                           )}
                           {canManageChannel && (
                             <SettingsIcon 
-                              className="w-3.5 h-3.5 text-[#b5bac1] hover:text-[#dbdee1]" 
+                              className="w-3.5 h-3.5 text-[#b5bac1] hover:text-[#dbdee1] pointer-events-auto" 
                               title="Chỉnh sửa kênh" 
                               onClick={(e) => {
                                 e.stopPropagation();
