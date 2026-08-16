@@ -1,0 +1,264 @@
+439: (+1 -0) depth=1 | <div className="flex h-screen w-screen overflow-hidden bg-[#313338] text-[#dbdee1] font-sans antialiased select-none">
+443: (+1 -0) depth=2 | <div
+450: (+1 -0) depth=3 | <div
+456: (+1 -0) depth=4 | <div className="w-[72px] bg-[#1e1f22] flex flex-col items-center py-3 space-y-2 shrink-0 z-10">
+457: (+1 -0) depth=5 | <div
+466: (+1 -0) depth=6 | <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-rose-500 rounded-full border-4 border-[#1e1f22] flex items-center justify-center pointer-events-none z-20">
+468: (+0 -1) depth=5 | </div>
+477: (+0 -1) depth=4 | </div>
+479: (+1 -0) depth=5 | <div className="w-8 h-[2px] bg-[#35363c] rounded mb-2" />
+481: (+1 -0) depth=6 | <div className="flex-1 w-full space-y-2 overflow-y-auto overflow-x-hidden no-scrollbar flex flex-col items-center">
+483: (+1 -0) depth=7 | <div
+491: (+1 -0) depth=8 | <div className="w-full h-full flex items-center justify-center rounded-[inherit] overflow-hidden">
+501: (+0 -1) depth=7 | </div>
+505: (+1 -0) depth=8 | <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-rose-500 rounded-full border-4 border-[#1e1f22] flex items-center justify-center pointer-events-none z-20">
+507: (+0 -1) depth=7 | </div>
+516: (+0 -1) depth=6 | </div>
+519: (+1 -0) depth=7 | <div
+527: (+0 -1) depth=6 | </div>
+529: (+1 -0) depth=7 | <div className="group relative flex items-center justify-center w-12 h-12 rounded-[24px] hover:rounded-[16px] bg-[#313338] hover:bg-emerald-500 text-emerald-500 hover:text-white transition-all duration-300 cursor-pointer">
+534: (+0 -1) depth=6 | </div>
+535: (+0 -1) depth=5 | </div>
+536: (+0 -1) depth=4 | </div>
+539: (+1 -0) depth=5 | <div className="w-[240px] bg-[#2b2d31] flex flex-col shrink-0 z-5 border-r border-[#1f2023]/30">
+542: (+1 -0) depth=6 | <div
+550: (+1 -0) depth=7 | <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+553: (+1 -1) depth=7 | <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-transparent to-[#2b2d31]"></div>
+554: (+0 -1) depth=6 | </div>
+560: (+1 -0) depth=7 | <div className="flex items-center space-x-1 z-10 mt-[2px]">
+569: (+0 -1) depth=6 | </div>
+571: (+0 -1) depth=5 | </div>
+573: (+1 -0) depth=6 | <div className="flex-1 overflow-y-auto px-2 py-3 space-y-4 no-scrollbar">
+579: (+1 -0) depth=7 | <div
+589: (+0 -1) depth=6 | </div>
+592: (+1 -0) depth=7 | <div
+602: (+0 -1) depth=6 | </div>
+605: (+1 -0) depth=7 | <div className="w-full h-[1px] bg-[#3f4147]/40 my-3" />
+608: (+1 -0) depth=8 | <div className="flex items-center justify-between px-2 mb-1 group">
+617: (+0 -1) depth=7 | </div>
+620: (+1 -0) depth=8 | <div className="space-y-0.5 mt-1">
+669: (+1 -0) depth=9 | <div
+680: (+1 -0) depth=10 | <div className="absolute inset-0 z-0 pointer-events-none opacity-40 mix-blend-screen">
+682: (+0 -1) depth=9 | </div>
+685: (+1 -0) depth=10 | <div className="relative z-10 flex items-center gap-3 min-w-0">
+686: (+1 -0) depth=11 | <div className="relative shrink-0 w-8 h-8 rounded-full">
+689: (+1 -0) depth=12 | <div className="absolute inset-0 z-10 pointer-events-none scale-[1.35]">
+691: (+0 -1) depth=11 | </div>
+693: (+1 -0) depth=12 | <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#2b2d31] z-20 ${isOnline ? 'bg-[#23a55a]' : 'bg-[#80848e]'}`} />
+694: (+0 -1) depth=11 | </div>
+695: (+1 -0) depth=12 | <div className="flex flex-col min-w-0">
+698: (+0 -1) depth=11 | </div>
+699: (+0 -1) depth=10 | </div>
+702: (+1 -0) depth=11 | <div className="relative z-10 flex items-center justify-center bg-rose-500 text-white text-[10px] font-bold rounded-full w-4 h-4 shrink-0 shadow-md">
+704: (+0 -1) depth=10 | </div>
+706: (+0 -1) depth=9 | </div>
+710: (+1 -0) depth=10 | <div className="px-2 py-3 text-xs text-[#949ba4] text-center italic">
+712: (+0 -1) depth=9 | </div>
+715: (+0 -1) depth=8 | </div>
+723: (+1 -0) depth=9 | <div className="space-y-0.5 pb-2 border-b border-[#1f2023]/30 mb-2">
+724: (+1 -0) depth=10 | <div className="flex items-center px-2 py-1.5 rounded-md cursor-pointer text-[#949ba4] hover:bg-[#35373c] hover:text-[#dbdee1] transition-all">
+727: (+0 -1) depth=9 | </div>
+729: (+1 -0) depth=10 | <div className="flex items-center px-2 py-1.5 rounded-md cursor-pointer text-[#949ba4] hover:bg-[#35373c] hover:text-[#dbdee1] transition-all">
+732: (+0 -1) depth=9 | </div>
+734: (+0 -1) depth=8 | </div>
+737: (+1 -0) depth=9 | <div className="mb-4">
+746: (+1 -0) depth=10 | <div
+792: (+1 -0) depth=11 | <div className="flex items-center flex-1 min-w-0 relative">
+794: (+1 -1) depth=11 | <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-white rounded-full"></div>
+798: (+0 -1) depth=10 | </div>
+800: (+1 -0) depth=11 | <div className="flex items-center justify-center bg-rose-500 text-white text-[10px] font-bold rounded-full w-4 h-4 shrink-0 mx-1">
+801: (+0 -1) depth=10 | </div>
+815: (+1 -0) depth=11 | <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+836: (+0 -1) depth=10 | </div>
+839: (+0 -1) depth=9 | </div>
+841: (+0 -1) depth=8 | </div>
+844: (+1 -0) depth=9 | <div>
+855: (+1 -0) depth=10 | <div key={ch._id} className="flex flex-col mb-0.5">
+856: (+1 -0) depth=11 | <div
+862: (+0 -1) depth=10 | </div>
+866: (+1 -0) depth=11 | <div className="pl-8 pr-2 flex flex-col gap-1 mt-1 mb-1">
+868: (+1 -0) depth=12 | <div key={u._id} className="flex items-center gap-2 group/vuser hover:bg-[#35373c]/50 p-1 rounded cursor-pointer transition-colors">
+877: (+0 -1) depth=11 | </div>
+879: (+0 -1) depth=10 | </div>
+881: (+0 -1) depth=9 | </div>
+884: (+0 -1) depth=8 | </div>
+887: (+0 -1) depth=7 | </div>
+890: (+1 -0) depth=8 | <div className="h-[56px] bg-[#232428] flex items-center justify-between px-2 shrink-0 border-t border-[#1f2023]/40">
+891: (+1 -0) depth=9 | <div
+906: (+1 -0) depth=10 | <div className="absolute inset-0 z-0 pointer-events-none">
+907: (+1 -0) depth=11 | <div className="absolute inset-0 opacity-80 mix-blend-screen">
+910: (+0 -1) depth=10 | </div>
+911: (+1 -0) depth=11 | <div
+915: (+0 -1) depth=10 | </div>
+917: (+1 -0) depth=11 | <div className="relative z-10 flex items-center space-x-2 min-w-0 w-full">
+919: (+1 -0) depth=12 | <div className={`relative shrink-0 w-8 h-8 rounded-full p-[2px] transition-all duration-300 ${
+922: (+1 -0) depth=13 | <div className="w-full h-full rounded-full overflow-hidden border border-slate-900 bg-slate-800">
+928: (+0 -1) depth=12 | </div>
+931: (+1 -0) depth=13 | <div className="absolute -inset-[13%] pointer-events-none z-20">
+942: (+0 -1) depth=12 | </div>
+945: (+1 -0) depth=13 | <div className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-[#23a55a] border-2 border-[#232428]" />
+946: (+0 -1) depth=12 | </div>
+949: (+1 -0) depth=13 | <div className="min-w-0 flex flex-col justify-center">
+957: (+0 -1) depth=12 | </div>
+958: (+0 -1) depth=11 | </div>
+959: (+0 -1) depth=10 | </div>
+962: (+1 -0) depth=11 | <div className="flex items-center text-[#b5bac1]">
+984: (+0 -1) depth=10 | </div>
+985: (+0 -1) depth=9 | </div>
+986: (+0 -1) depth=8 | </div>
+990: (+1 -0) depth=9 | <div className="flex-1 flex flex-col bg-[#313338] h-full min-w-0 z-1 relative">
+993: (+1 -0) depth=10 | <div className="absolute top-4 right-4 z-50 bg-[#2b2d31] border border-[#1f2023] shadow-2xl rounded-lg p-4 flex items-start gap-3 w-[320px] animate-fade-in">
+994: (+1 -0) depth=11 | <div className="shrink-0 bg-[#1e1f22] p-2 rounded-full border border-[#3f4147]">
+996: (+0 -1) depth=10 | </div>
+997: (+1 -0) depth=11 | <div className="flex-1">
+1000: (+0 -1) depth=10 | </div>
+1004: (+0 -1) depth=9 | </div>
+1008: (+1 -0) depth=10 | <div className="h-12 border-b border-[#1f2023] flex items-center justify-between px-3 md:px-4 shrink-0 shadow-sm bg-[#313338]">
+1009: (+1 -0) depth=11 | <div className="flex items-center space-x-2 font-bold text-white min-w-0">
+1053: (+0 -1) depth=10 | </div>
+1055: (+1 -0) depth=11 | <div className="flex items-center space-x-4 text-[#b5bac1]">
+1065: (+1 -0) depth=12 | <div className="relative hidden sm:block">
+1072: (+0 -1) depth=11 | </div>
+1073: (+0 -1) depth=10 | </div>
+1074: (+0 -1) depth=9 | </div>
+1077: (+1 -0) depth=10 | <div className="flex-grow overflow-hidden">
+1087: (+0 -1) depth=9 | </div>
+1088: (+0 -1) depth=8 | </div>
+1094: (+1 -0) depth=9 | <div
+1099: (+1 -0) depth=10 | <div className="fixed lg:static right-0 inset-y-0 z-50 w-[240px] bg-[#2b2d31] flex flex-col shrink-0 border-l border-[#1f2023]/30 h-full shadow-2xl lg:shadow-none transition-transform duration-300">
+1100: (+1 -0) depth=11 | <div className="flex-1 overflow-y-auto px-2 py-4 space-y-4 no-scrollbar">
+1102: (+1 -0) depth=12 | <div className="flex flex-col items-center justify-center h-full px-2">
+1106: (+0 -1) depth=11 | </div>
+1135: (+1 -0) depth=12 | <div
+1178: (+1 -0) depth=13 | <div className="absolute inset-0 z-0 pointer-events-none">
+1179: (+1 -0) depth=14 | <div className="absolute inset-0 opacity-80 mix-blend-screen">
+1182: (+0 -1) depth=13 | </div>
+1183: (+0 -1) depth=12 | </div>
+1185: (+1 -0) depth=13 | <div className="relative z-10 flex items-center space-x-2.5 w-full">
+1186: (+1 -0) depth=14 | <div className={`relative shrink-0 w-8 h-8 rounded-full p-[2px] transition-all duration-300 ${mFrameInfo ? '' : 'bg-transparent'}`}>
+1187: (+1 -0) depth=15 | <div className="w-full h-full rounded-full overflow-hidden border border-slate-900 bg-slate-800">
+1193: (+0 -1) depth=14 | </div>
+1195: (+1 -0) depth=15 | <div className="absolute -inset-[13%] pointer-events-none z-20">
+1198: (+0 -1) depth=14 | </div>
+1200: (+1 -0) depth=15 | <div className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full ${isOnline ? 'bg-[#23a55a]' : 'bg-[#80848e]'} border-2 border-[#2b2d31]`} />
+1201: (+0 -1) depth=14 | </div>
+1202: (+1 -0) depth=15 | <div className="min-w-0 flex flex-col">
+1208: (+0 -1) depth=14 | </div>
+1209: (+0 -1) depth=13 | </div>
+1210: (+0 -1) depth=12 | </div>
+1215: (+1 -0) depth=13 | <div key={role}>
+1219: (+1 -0) depth=14 | <div className="space-y-0.5">
+1221: (+0 -1) depth=13 | </div>
+1222: (+0 -1) depth=12 | </div>
+1225: (+0 -1) depth=11 | </div>
+1226: (+0 -1) depth=10 | </div>
+1330: (+1 -0) depth=11 | <div
+1335: (+1 -0) depth=12 | <div
+1343: (+1 -0) depth=13 | <div
+1373: (+0 -1) depth=12 | </div>
+1377: (+1 -0) depth=13 | <div className="px-2 py-1.5 mx-2 cursor-pointer rounded hover:bg-[#5865F2] hover:text-white transition-colors flex items-center justify-between">
+1379: (+0 -1) depth=12 | </div>
+1380: (+1 -0) depth=13 | <div
+1389: (+0 -1) depth=12 | </div>
+1390: (+1 -0) depth=13 | <div className="h-[1px] bg-[#1f2023] my-1 mx-2" />
+1391: (+1 -0) depth=14 | <div className="px-2 py-1.5 mx-2 cursor-pointer rounded hover:bg-[#5865F2] hover:text-white transition-colors flex items-center justify-between group">
+1394: (+0 -1) depth=13 | </div>
+1395: (+1 -0) depth=14 | <div className="h-[1px] bg-[#1f2023] my-1 mx-2" />
+1396: (+1 -0) depth=15 | <div className="px-2 py-1.5 mx-2 cursor-pointer rounded hover:bg-[#5865F2] hover:text-white transition-colors flex items-center justify-between">
+1398: (+0 -1) depth=14 | </div>
+1402: (+1 -0) depth=15 | <div className="px-2 py-1.5 mx-2 cursor-pointer rounded hover:bg-[#5865F2] hover:text-white transition-colors flex items-center justify-between">
+1404: (+0 -1) depth=14 | </div>
+1405: (+1 -0) depth=15 | <div className="px-2 py-1.5 mx-2 cursor-pointer rounded hover:bg-[#5865F2] hover:text-white transition-colors flex items-center justify-between">
+1407: (+0 -1) depth=14 | </div>
+1408: (+1 -0) depth=15 | <div className="px-2 py-1.5 mx-2 cursor-pointer rounded hover:bg-[#5865F2] hover:text-white transition-colors flex items-center justify-between">
+1409: (+1 -0) depth=16 | <div className="flex flex-col">
+1412: (+0 -1) depth=15 | </div>
+1413: (+0 -1) depth=14 | </div>
+1414: (+1 -0) depth=15 | <div className="h-[1px] bg-[#1f2023] my-1 mx-2" />
+1415: (+1 -0) depth=16 | <div className="px-2 py-1.5 mx-2 cursor-pointer rounded hover:bg-[#5865F2] hover:text-white transition-colors flex items-center justify-between group">
+1418: (+0 -1) depth=15 | </div>
+1419: (+1 -0) depth=16 | <div
+1425: (+0 -1) depth=15 | </div>
+1426: (+1 -0) depth=16 | <div className="px-2 py-1.5 mx-2 cursor-pointer rounded hover:bg-[#5865F2] hover:text-white transition-colors flex items-center justify-between">
+1428: (+0 -1) depth=15 | </div>
+1429: (+1 -0) depth=16 | <div className="px-2 py-1.5 mx-2 cursor-pointer rounded hover:bg-[#5865F2] hover:text-white transition-colors flex items-center justify-between">
+1431: (+0 -1) depth=15 | </div>
+1432: (+1 -0) depth=16 | <div className="px-2 py-1.5 mx-2 cursor-pointer rounded hover:bg-[#da373c] hover:text-white text-[#da373c] transition-colors flex items-center justify-between">
+1434: (+0 -1) depth=15 | </div>
+1435: (+1 -0) depth=16 | <div className="h-[1px] bg-[#1f2023] my-1 mx-2" />
+1436: (+1 -0) depth=17 | <div className="px-2 py-1.5 mx-2 cursor-pointer rounded hover:bg-[#5865F2] hover:text-white transition-colors flex items-center justify-between group">
+1439: (+0 -1) depth=16 | </div>
+1442: (+0 -1) depth=15 | </div>
+1443: (+0 -1) depth=14 | </div>
+1499: (+1 -0) depth=15 | <div
+1504: (+1 -0) depth=16 | <div
+1512: (+1 -0) depth=17 | <div
+1538: (+0 -1) depth=16 | </div>
+1540: (+1 -0) depth=17 | <div className="h-[1px] bg-[#1f2023] my-1 mx-2" />
+1542: (+1 -0) depth=18 | <div
+1551: (+0 -1) depth=17 | </div>
+1553: (+1 -0) depth=18 | <div className="h-[1px] bg-[#1f2023] my-1 mx-2" />
+1555: (+1 -0) depth=19 | <div className="px-2 py-1.5 mx-2 cursor-pointer rounded hover:bg-[#5865F2] hover:text-white transition-colors flex items-center justify-between group">
+1558: (+0 -1) depth=18 | </div>
+1560: (+1 -0) depth=19 | <div className="relative group">
+1561: (+1 -0) depth=20 | <div className="px-2 py-1.5 mx-2 cursor-pointer rounded hover:bg-[#5865F2] hover:text-white transition-colors flex items-center justify-between">
+1562: (+1 -0) depth=21 | <div className="flex flex-col">
+1567: (+0 -1) depth=20 | </div>
+1569: (+0 -1) depth=19 | </div>
+1572: (+1 -0) depth=20 | <div className="absolute left-[calc(100%-8px)] -top-10 w-[260px] bg-[#111214] border border-[#1f2023] rounded shadow-2xl py-2 hidden group-hover:block z-[110] animate-fade-in">
+1573: (+1 -0) depth=21 | <div
+1579: (+2 -2) depth=21 | <div className="w-4 h-4 rounded-full bg-[#5865F2] flex items-center justify-center ring-2 ring-[#5865F2] border-2 border-[#111214]"><div className="w-1.5 h-1.5 bg-white rounded-full"></div></div>
+1581: (+1 -1) depth=21 | <div className="w-4 h-4 rounded-full border border-[#80848e]"></div>
+1583: (+0 -1) depth=20 | </div>
+1584: (+1 -0) depth=21 | <div
+1590: (+2 -2) depth=21 | <div className="w-4 h-4 rounded-full bg-[#5865F2] flex items-center justify-center ring-2 ring-[#5865F2] border-2 border-[#111214]"><div className="w-1.5 h-1.5 bg-white rounded-full"></div></div>
+1592: (+1 -1) depth=21 | <div className="w-4 h-4 rounded-full border border-[#80848e]"></div>
+1594: (+0 -1) depth=20 | </div>
+1595: (+1 -0) depth=21 | <div
+1601: (+2 -2) depth=21 | <div className="w-4 h-4 rounded-full bg-[#5865F2] flex items-center justify-center ring-2 ring-[#5865F2] border-2 border-[#111214]"><div className="w-1.5 h-1.5 bg-white rounded-full"></div></div>
+1603: (+1 -1) depth=21 | <div className="w-4 h-4 rounded-full border border-[#80848e]"></div>
+1605: (+0 -1) depth=20 | </div>
+1607: (+1 -0) depth=21 | <div className="h-[1px] bg-[#1f2023] my-1 mx-2" />
+1609: (+1 -0) depth=22 | <div
+1614: (+1 -0) depth=23 | <div className={`w-4 h-4 rounded-[3px] flex items-center justify-center ${notifSettings.suppressEveryone ? 'border-none bg-[#5865F2]' : 'border border-[#80848e]'}`}>
+1616: (+0 -1) depth=22 | </div>
+1617: (+0 -1) depth=21 | </div>
+1618: (+1 -0) depth=22 | <div
+1623: (+1 -0) depth=23 | <div className={`w-4 h-4 rounded-[3px] flex items-center justify-center ${notifSettings.suppressRoles ? 'border-none bg-[#5865F2]' : 'border border-[#80848e]'}`}>
+1625: (+0 -1) depth=22 | </div>
+1626: (+0 -1) depth=21 | </div>
+1627: (+1 -0) depth=22 | <div
+1632: (+1 -0) depth=23 | <div className={`w-4 h-4 rounded-[3px] flex items-center justify-center ${notifSettings.suppressHighlights ? 'border-none bg-[#5865F2]' : 'border border-[#80848e]'}`}>
+1634: (+0 -1) depth=22 | </div>
+1635: (+0 -1) depth=21 | </div>
+1636: (+1 -0) depth=22 | <div
+1641: (+1 -0) depth=23 | <div className={`w-4 h-4 rounded-[3px] flex items-center justify-center ${notifSettings.muteEvents ? 'border-none bg-[#5865F2]' : 'border border-[#80848e]'}`}>
+1643: (+0 -1) depth=22 | </div>
+1644: (+0 -1) depth=21 | </div>
+1646: (+1 -0) depth=22 | <div className="h-[1px] bg-[#1f2023] my-1 mx-2" />
+1648: (+1 -0) depth=23 | <div
+1653: (+1 -0) depth=24 | <div className={`w-4 h-4 rounded-[3px] flex items-center justify-center ${notifSettings.mobilePush ? 'border-none bg-[#5865F2]' : 'border border-[#80848e]'}`}>
+1655: (+0 -1) depth=23 | </div>
+1656: (+0 -1) depth=22 | </div>
+1657: (+0 -1) depth=21 | </div>
+1658: (+0 -1) depth=20 | </div>
+1659: (+1 -0) depth=21 | <div className="px-2 py-1.5 mx-2 cursor-pointer rounded hover:bg-[#5865F2] hover:text-white transition-colors flex items-center justify-between group">
+1661: (+1 -1) depth=21 | <div className="w-4 h-4 border border-[#80848e] rounded-[3px] group-hover:border-white"></div>
+1662: (+0 -1) depth=20 | </div>
+1664: (+1 -0) depth=21 | <div className="h-[1px] bg-[#1f2023] my-1 mx-2" />
+1667: (+1 -0) depth=22 | <div
+1677: (+0 -1) depth=21 | </div>
+1681: (+1 -0) depth=22 | <div className="px-2 py-1.5 mx-2 cursor-pointer rounded hover:bg-[#5865F2] hover:text-white transition-colors flex items-center justify-between">
+1683: (+0 -1) depth=21 | </div>
+1686: (+1 -0) depth=22 | <div
+1695: (+0 -1) depth=21 | </div>
+1699: (+1 -0) depth=22 | <div className="h-[1px] bg-[#1f2023] my-1 mx-2" />
+1701: (+1 -0) depth=23 | <div
+1710: (+0 -1) depth=22 | </div>
+1712: (+1 -0) depth=23 | <div className="px-2 py-1.5 mx-2 cursor-pointer rounded hover:bg-[#5865F2] hover:text-white transition-colors flex items-center justify-between">
+1714: (+0 -1) depth=22 | </div>
+1716: (+1 -0) depth=23 | <div className="px-2 py-1.5 mx-2 cursor-pointer rounded hover:bg-[#5865F2] hover:text-white transition-colors flex items-center justify-between">
+1718: (+0 -1) depth=22 | </div>
+1721: (+0 -1) depth=21 | </div>
+1722: (+0 -1) depth=20 | </div>
+1767: (+0 -1) depth=19 | </div>

@@ -99,6 +99,8 @@ export default function VoiceChannelPage() {
   // Initialize voice connection
   useEffect(() => {
     if (!user || !channelId) return;
+    
+    let isMounted = true;
 
     const socket = io(import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000', {
       auth: { token: localStorage.getItem('token') }
@@ -174,45 +176,49 @@ export default function VoiceChannelPage() {
           const avg = data.reduce((a, b) => a + b, 0) / data.length;
           const isSpeaking = avg > 15;
           setSpeaking(prev => {
-            if (prev[user._id] !== isSpeaking) {
-              return { ...prev, [user._id]: isSpeaking };
+            if (prev[(user._id || user.id)] !== isSpeaking) {
+              return { ...prev, [(user._id || user.id)]: isSpeaking };
             }
             return prev;
           });
         };
         const speakingInterval = setInterval(checkSpeaking, 100);
 
-        console.log('Sending voice_join to socket:', { channelId, communityId, userId: user._id });
-        // Join voice channel
-        socket.emit('voice_join', {
-          channelId,
-          communityId,
-          user: {
-            _id: user._id,
-            username: user.username,
-            displayName: user.displayName,
-            avatar: user.avatar,
-            isPremium: user.isPremium,
-          }
-        });
+        if (!isMounted) return;
+
+        console.log('Voice socket connecting...');
 
         socket.on('connect', () => {
+          if (!isMounted) return;
           console.log('Voice socket connected');
+          setConnectionStatus('connected');
+          addDebug('Socket connected, joined channel.');
+          
+          // Join voice channel
+          socket.emit('voice_join', {
+            channelId,
+            communityId,
+            user: {
+              _id: (user._id || user.id),
+              username: user.username,
+              displayName: user.displayName,
+              avatar: user.avatar,
+              isPremium: user.isPremium,
+            }
+          });
+          
+          // Send initial state to others
+          socket.emit('voice_state_update', { 
+            channelId, 
+            state: { isMuted, isDeafened, isVideoOn } 
+          });
         });
         
         socket.on('connect_error', (err) => {
+          if (!isMounted) return;
           addDebug(`Socket connect error: ${err.message}`);
           console.error('Voice socket connect_error:', err);
-        });
-
-        setConnectionStatus('connected');
-        addDebug('Socket connected, joined channel.');
-        console.log('Voice initialized successfully');
-
-        // Send initial state to others
-        socket.emit('voice_state_update', { 
-          channelId, 
-          state: { isMuted, isDeafened, isVideoOn } 
+          setConnectionStatus('disconnected');
         });
 
         // When we get the list of existing users in the voice channel
@@ -221,7 +227,7 @@ export default function VoiceChannelPage() {
           setConnectedUsers(users);
           // Create peer connections to each existing user
           users.forEach(u => {
-            if (u._id !== user._id) {
+            if (u._id !== (user._id || user.id)) {
               addDebug(`Creating offer for ${u.username}`);
               createPeerConnection(u._id, true, localStreamRef.current, socket);
             }
@@ -284,7 +290,7 @@ export default function VoiceChannelPage() {
           }
           
           try {
-            const isPolite = user._id > from;
+            const isPolite = (user._id || user.id) > from;
             if (pc.signalingState !== 'stable') {
               console.warn("Signaling state is not stable, glare detected");
               if (!isPolite) {
@@ -347,16 +353,19 @@ export default function VoiceChannelPage() {
 
       } catch (err) {
         console.error('Failed to get audio:', err);
-        setConnectionStatus('disconnected');
+        if (isMounted) {
+          setConnectionStatus('disconnected');
+        }
       }
     };
 
     initVoice();
 
     return () => {
+      isMounted = false;
       cleanup();
     };
-  }, [user, channelId, communityId]);
+  }, [(user?._id || user?.id), channelId, communityId]);
 
   // Create a peer connection
   const createPeerConnection = (peerId, createOffer, stream, socket) => {
@@ -497,7 +506,7 @@ export default function VoiceChannelPage() {
         
         const pseudoUser = {
           ...user,
-          _id: `${user._id}_screen`,
+          _id: `${(user._id || user.id)}_screen`,
           username: `${user.username} (Screen)`,
           displayName: `${user.displayName || user.username} (Screen)`,
           isScreen: true,
@@ -514,7 +523,7 @@ export default function VoiceChannelPage() {
         // Bare minimum WebRTC signaling for the sender (our screen to everyone else)
         screenSocket.on('voice_users', (users) => {
           users.forEach(u => {
-            if (u._id !== user._id && u._id !== pseudoUser._id) {
+            if (u._id !== (user._id || user.id) && u._id !== pseudoUser._id) {
               const pc = new RTCPeerConnection(iceServersConfigRef.current);
               screenStream.getTracks().forEach(t => pc.addTrack(t, screenStream));
               
