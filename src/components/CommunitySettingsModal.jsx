@@ -1302,7 +1302,7 @@ export default function CommunitySettingsModal({ isOpen, onClose, community, onU
                       <span className="text-[#23a55a] font-bold">✓</span>
                     </div>
                     <div className="flex justify-between items-center text-[13px] py-1.5 text-[#dbdee1]">
-                      <div className="flex items-center gap-2"><span className="text-[#949ba4] font-bold ml-1 mr-1 text-[16px]">#</span> Ngày tham gia Discord</div>
+                      <div className="flex items-center gap-2"><span className="text-[#949ba4] font-bold ml-1 mr-1 text-[16px]">#</span> Ngày tham gia Veltrix</div>
                       <span className="text-[#b5bac1] font-medium text-[12px]">{new Date(u.createdAt || selectedModMember.joinedAt).toLocaleDateString('vi-VN', {day:'numeric', month:'short', year:'numeric'})}</span>
                     </div>
                     <div className="flex justify-between items-center text-[13px] py-1.5 text-[#dbdee1]">
