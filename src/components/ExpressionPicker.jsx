@@ -93,7 +93,7 @@ export default function ExpressionPicker({ onEmojiClick, onStickerClick, initial
               allComms.flatMap(c => 
                 (c.emojis || []).map(e => ({
                   id: e._id || e.name,
-                  name: e.name,
+                  names: [e.name],
                   imgUrl: e.url
                 }))
               )
