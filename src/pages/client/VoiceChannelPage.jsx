@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useParams, useOutletContext } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { io } from 'socket.io-client';
@@ -717,8 +718,8 @@ export default function VoiceChannelPage() {
   return (
     <div className="flex-1 flex flex-col bg-[#000000] h-full relative">
 
-      {/* iOS CSS Pseudo-Fullscreen Overlay */}
-      {isFullscreen && fullscreenUserId && (() => {
+      {/* ===== FULLSCREEN OVERLAY (Portal → render thẳng vào document.body, bypass mọi z-index) ===== */}
+      {isFullscreen && fullscreenUserId && createPortal((() => {
         const u = connectedUsers.find(u => u._id === fullscreenUserId);
         if (!u) return null;
         const isMe = u._id === user?._id;
@@ -731,8 +732,15 @@ export default function VoiceChannelPage() {
 
         return (
           <div 
-            className="fixed inset-0 z-[9999] bg-black flex items-center justify-center"
-            style={{ touchAction: 'none' }}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 2147483647, // Max z-index possible
+              backgroundColor: '#000',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
           >
             {hasVideo ? (
               <video
@@ -744,31 +752,40 @@ export default function VoiceChannelPage() {
                     video.play().catch(() => {});
                   }
                 }}
-                className="w-full h-full object-contain"
+                style={{ width: '100%', height: '100%', objectFit: 'contain' }}
               />
             ) : (
-              <img src={avatar} alt={u.username} className="w-40 h-40 rounded-full object-cover" />
+              <img src={avatar} alt={u.username} style={{ width: 160, height: 160, borderRadius: '50%', objectFit: 'cover' }} />
             )}
 
-            {/* Name */}
-            <div className="absolute bottom-28 left-5 bg-black/60 px-3 py-1.5 rounded-lg flex items-center gap-2">
-              <span className={`text-base font-semibold ${u.isPremium ? 'text-[#f47fff]' : 'text-white'}`}>
+            {/* Tên người dùng */}
+            <div style={{
+              position: 'absolute', bottom: 112, left: 20,
+              background: 'rgba(0,0,0,0.65)', padding: '8px 14px',
+              borderRadius: 10, display: 'flex', alignItems: 'center', gap: 8
+            }}>
+              <span style={{ color: u.isPremium ? '#f47fff' : '#fff', fontWeight: 600, fontSize: 16 }}>
                 {u.displayName || u.username}
               </span>
-              {u.isPremium && <Sparkles className="w-4 h-4 text-[#f47fff]" />}
             </div>
 
-            {/* Exit fullscreen button */}
+            {/* Nút thoát fullscreen */}
             <button
               onClick={() => toggleFullscreen(fullscreenUserId)}
-              className="absolute top-5 right-5 w-12 h-12 bg-black/70 rounded-full flex items-center justify-center shadow-xl"
-              title="Thoát toàn màn hình"
+              style={{
+                position: 'absolute', top: 20, right: 20,
+                width: 48, height: 48, borderRadius: '50%',
+                background: 'rgba(0,0,0,0.75)', border: 'none',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,0,0,0.5)'
+              }}
             >
-              <Minimize2 className="w-6 h-6 text-white" />
+              <Minimize2 style={{ width: 24, height: 24, color: '#fff' }} />
             </button>
           </div>
         );
-      })()}
+      })(), document.body)}
+
 
       {/* Header */}
       <div className="h-12 border-b border-[#1f2023] bg-[#313338] flex items-center px-4 shrink-0 z-10">
