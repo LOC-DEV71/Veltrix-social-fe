@@ -278,17 +278,20 @@ export default function CommunitySettingsModal({ isOpen, onClose, community, onU
       const res = await axiosClient.put(`/api/communities/${community._id}/member-role`, {
         memberId: memberId
       });
-      if (res.data.success) {
-        // Update local state
-        const updatedMembers = fullCommunity.members.map(m => {
-          const mId = typeof m.user === 'object' ? m.user._id : m.user;
-          if (mId === memberId) {
+      if (res.data && res.data.success) {
+        // Update local state safely
+        const updatedMembers = (fullCommunity?.members || []).map(m => {
+          if (!m || !m.user) return m;
+          const mId = (typeof m.user === 'object' && m.user !== null) ? (m.user._id || m.user.id) : m.user;
+          if (String(mId) === String(memberId)) {
             return { ...m, role: res.data.data.role };
           }
           return m;
         });
-        setFullCommunity({ ...fullCommunity, members: updatedMembers });
-        setSelectedModMember({ ...selectedModMember, role: res.data.data.role });
+        setFullCommunity(prev => ({ ...prev, members: updatedMembers }));
+        if (selectedModMember) {
+          setSelectedModMember({ ...selectedModMember, role: res.data.data.role });
+        }
       }
     } catch (error) {
       console.error(error);
