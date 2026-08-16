@@ -493,7 +493,7 @@ export default function ChatPage() {
 
   const onEmojiClick = (emojiObject) => {
     if (emojiObject.isCustom) {
-      setInputText(prev => prev + `<e:${emojiObject.names[0]}:${emojiObject.imageUrl}>`);
+      setInputText(prev => prev + `:${emojiObject.names[0]}: `);
     } else {
       setInputText(prev => prev + emojiObject.emoji);
     }
@@ -516,35 +516,20 @@ export default function ChatPage() {
 
     const payload = {
       senderId: (user._id || user.id),
-      content: '',
+      content: stickerUrl,
       channelId: channelId,
       communityId: activeCommunityId,
-      attachments: [{
-        url: stickerUrl,
-        name: 'sticker.gif',
-        fileType: 'image'
-      }],
-      replyTo: replyingToMessage?._id || undefined
+      isSticker: true
     };
-
     socketRef.current.emit('send_message', payload);
     setShowExpressionPicker(false);
-    setReplyingToMessage(null);
-
-    // Stop typing indicator
-    socketRef.current.emit('typing_stop', {
-      channelId,
-      user: { _id: (user._id || user.id) }
-    });
-    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
   };
 
   // Handle Send Message
   const handleSendMessage = async (e) => {
-    if (e?.preventDefault) e.preventDefault();
-    if ((!inputText.trim() && selectedFiles.length === 0) || !socketRef.current || !(user?._id || user?.id) || isUploading) return;
-
+    e.preventDefault();
     const activeCommunityId = communityId || selectedCommunity?._id;
+    if ((!inputText.trim() && selectedFiles.length === 0) || !channelId || !activeCommunityId) return;
 
     // --- SLOW MODE CHECK ---
     if (channelInfo?.slowMode > 0) {
@@ -555,6 +540,21 @@ export default function ChatPage() {
         return;
       }
       lastMessageTimeRef.current = now;
+    }
+
+    // Process custom emojis: convert :name: to <e:name:url>
+    let processedText = inputText.trim();
+    if (processedText) {
+      const emojiRegex = /:([a-zA-Z0-9_]+):/g;
+      processedText = processedText.replace(emojiRegex, (match, name) => {
+        for (const comm of myCommunities) {
+          if (comm.emojis) {
+            const found = comm.emojis.find(e => e.name === name);
+            if (found) return `<e:${name}:${found.url}>`;
+          }
+        }
+        return match;
+      });
     }
 
     if (selectedFiles.length > 0) {
@@ -568,7 +568,7 @@ export default function ChatPage() {
       const tempMessage = {
         _id: fakeId,
         sender: user,
-        content: inputText.trim(),
+        content: processedText,
         createdAt: new Date().toISOString(),
         attachments: fakeAttachments,
         isTemp: true
@@ -578,7 +578,7 @@ export default function ChatPage() {
 
       // Save data for upload
       const currentFiles = [...selectedFiles];
-      const currentText = inputText.trim();
+      const currentText = processedText;
 
       setSelectedFiles([]);
       setInputText('');
@@ -606,7 +606,7 @@ export default function ChatPage() {
     } else {
       const payload = {
         senderId: (user._id || user.id),
-        content: inputText.trim(),
+        content: processedText,
         channelId: channelId,
         communityId: activeCommunityId,
         replyTo: replyingToMessage?._id || undefined

@@ -419,7 +419,7 @@ export default function DirectMessagePage() {
                 <EmojiPicker 
                   onEmojiClick={(emojiData) => {
                     if (emojiData.isCustom) {
-                      setInputText(prev => prev + `<e:${emojiData.names[0]}:${emojiData.imageUrl}>`);
+                      setInputText(prev => prev + `:${emojiData.names[0]}: `);
                     } else {
                       setInputText(prev => prev + emojiData.emoji);
                     }
