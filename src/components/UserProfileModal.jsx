@@ -51,7 +51,7 @@ export default function UserProfileModal({ isOpen, onClose, onOpenSettings, onOp
   const handleLogout = async () => {
     try {
       localStorage.removeItem('token');
-      await axiosClient.post('/client/logout');
+      await axiosClient.post('/api/auth/logout');
       dispatch(reduxLogout());
       navigate('/login');
     } catch (error) {

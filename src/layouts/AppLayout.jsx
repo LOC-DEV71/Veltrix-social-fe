@@ -1445,6 +1445,7 @@ export default function AppLayout() {
         }
 
         const ctxComm = contextMenu.community;
+        if (!ctxComm || !user) return null; // Guard: không render nếu chưa có data
         const isOwnerCtx = ctxComm && String(ctxComm.owner?._id || ctxComm.owner) === String(user?._id);
         const myRoleMember = ctxComm?.members?.find(m => {
           const uid = typeof m.user === 'object' ? (m.user._id || m.user.id) : m.user;
