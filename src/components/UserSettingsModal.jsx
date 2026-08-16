@@ -1114,79 +1114,80 @@ export default function UserSettingsModal({ isOpen, onClose, initialTab = 'accou
   };
 
   return (
-    <div className="fixed inset-0 z-[200] flex bg-[#313338] animate-in slide-in-from-bottom-8 duration-300 overflow-hidden">
+    <div className="fixed inset-0 z-[200] flex flex-col md:flex-row bg-[#313338] animate-in slide-in-from-bottom-8 duration-300 overflow-hidden">
       
       {/* Sidebar Left */}
-      <div className="w-[280px] bg-[#2b2d31] flex-shrink-0">
-        <div className="w-full h-full overflow-y-auto overflow-x-hidden no-scrollbar px-8 py-16 flex flex-col gap-0.5">
-          <div className="px-2 pb-1.5 pt-4 text-[11px] font-black text-[#949ba4] uppercase tracking-wider">
+      <div className="w-full md:w-[280px] bg-[#2b2d31] flex-shrink-0 border-b md:border-b-0 border-[#1f2023] z-10">
+        <div className="w-full h-auto md:h-full overflow-x-auto md:overflow-y-auto md:overflow-x-hidden no-scrollbar px-2 py-3 md:px-8 md:py-16 flex flex-row md:flex-col gap-2 md:gap-0.5 items-center md:items-stretch">
+          <div className="hidden md:block px-2 pb-1.5 pt-4 text-[11px] font-black text-[#949ba4] uppercase tracking-wider">
             Cài đặt người dùng
           </div>
           <button 
             onClick={() => setActiveTab('account')}
-            className={`flex items-center gap-2 px-2.5 py-1.5 rounded text-sm font-medium transition-all ${activeTab === 'account' ? 'bg-[#404249] text-white' : 'text-[#b5bac1] hover:bg-[#35373c] hover:text-[#dbdee1]'}`}
+            className={`flex items-center gap-2 px-3 py-2 md:px-2.5 md:py-1.5 rounded text-sm font-medium transition-all whitespace-nowrap shrink-0 ${activeTab === 'account' ? 'bg-[#404249] text-white' : 'text-[#b5bac1] hover:bg-[#35373c] hover:text-[#dbdee1]'}`}
           >
             Tài khoản của tôi
           </button>
           <button 
             onClick={() => setActiveTab('profile')}
-            className={`flex items-center gap-2 px-2.5 py-1.5 rounded text-sm font-medium transition-all ${activeTab === 'profile' ? 'bg-[#404249] text-white' : 'text-[#b5bac1] hover:bg-[#35373c] hover:text-[#dbdee1]'}`}
+            className={`flex items-center gap-2 px-3 py-2 md:px-2.5 md:py-1.5 rounded text-sm font-medium transition-all whitespace-nowrap shrink-0 ${activeTab === 'profile' ? 'bg-[#404249] text-white' : 'text-[#b5bac1] hover:bg-[#35373c] hover:text-[#dbdee1]'}`}
           >
             Hồ sơ người dùng
           </button>
 
-          <div className="my-2 mx-2 h-[1px] bg-[#3f4147]" />
+          <div className="hidden md:block my-2 mx-2 h-[1px] bg-[#3f4147] shrink-0" />
 
-          <div className="px-2 pb-1.5 pt-4 text-[11px] font-black text-[#949ba4] uppercase tracking-wider">
+          <div className="hidden md:block px-2 pb-1.5 pt-4 text-[11px] font-black text-[#949ba4] uppercase tracking-wider">
             Cài đặt thanh toán
           </div>
           <button 
             onClick={() => setActiveTab('payment')}
-            className={`flex items-center gap-2 px-2.5 py-1.5 rounded text-sm font-medium transition-all ${activeTab === 'payment' ? 'bg-[#404249] text-white' : 'text-[#b5bac1] hover:bg-[#35373c] hover:text-[#dbdee1]'}`}
+            className={`flex items-center gap-2 px-3 py-2 md:px-2.5 md:py-1.5 rounded text-sm font-medium transition-all whitespace-nowrap shrink-0 ${activeTab === 'payment' ? 'bg-[#404249] text-white' : 'text-[#b5bac1] hover:bg-[#35373c] hover:text-[#dbdee1]'}`}
           >
             Đăng ký & Thanh toán
           </button>
 
-          <div className="my-2 mx-2 h-[1px] bg-[#3f4147]" />
+          <div className="hidden md:block my-2 mx-2 h-[1px] bg-[#3f4147] shrink-0" />
 
-          <div className="px-2 pb-1.5 pt-4 text-[11px] font-black text-[#949ba4] uppercase tracking-wider">
+          <div className="hidden md:block px-2 pb-1.5 pt-4 text-[11px] font-black text-[#949ba4] uppercase tracking-wider">
             Cài đặt ứng dụng
           </div>
           <button 
             onClick={() => setActiveTab('activity')}
-            className={`flex items-center gap-2 px-2.5 py-1.5 rounded text-sm font-medium transition-all ${activeTab === 'activity' ? 'bg-[#404249] text-white' : 'text-[#b5bac1] hover:bg-[#35373c] hover:text-[#dbdee1]'}`}
+            className={`flex items-center gap-2 px-3 py-2 md:px-2.5 md:py-1.5 rounded text-sm font-medium transition-all whitespace-nowrap shrink-0 ${activeTab === 'activity' ? 'bg-[#404249] text-white' : 'text-[#b5bac1] hover:bg-[#35373c] hover:text-[#dbdee1]'}`}
           >
             Trải nghiệm hoạt động
           </button>
           
-          <div className="my-2 mx-2 h-[1px] bg-[#3f4147]" />
+          <div className="hidden md:block my-2 mx-2 h-[1px] bg-[#3f4147] shrink-0" />
 
           <button 
             onClick={handleLogout}
-            className="flex items-center gap-2 px-2.5 py-1.5 rounded text-sm font-medium text-rose-400 hover:bg-rose-500/10 transition-all mt-2"
+            className="flex items-center gap-2 px-3 py-2 md:px-2.5 md:py-1.5 rounded text-sm font-medium text-rose-400 hover:bg-rose-500/10 transition-all md:mt-2 whitespace-nowrap shrink-0"
           >
             <LogOut className="w-4 h-4" />
-            Đổi tài khoản (Đăng xuất)
+            <span className="hidden md:inline">Đổi tài khoản (Đăng xuất)</span>
+            <span className="inline md:hidden">Đăng xuất</span>
           </button>
         </div>
       </div>
 
       {/* Main Content Area Right */}
-      <div className="flex-1 h-full bg-[#313338] relative flex justify-center">
-        <div className="w-full max-w-[740px] px-8 md:px-12 py-16 overflow-y-auto overflow-x-hidden no-scrollbar h-full">
+      <div className="flex-1 h-full bg-[#313338] relative flex justify-center w-full">
+        <div className="w-full max-w-[740px] px-4 md:px-12 py-8 md:py-16 overflow-y-auto overflow-x-hidden no-scrollbar h-full pb-24 md:pb-16">
           {renderContent()}
         </div>
 
         {/* Close Button Area */}
-        <div className="absolute top-16 right-8 md:right-16 flex flex-col items-center">
+        <div className="absolute top-4 right-4 md:top-16 md:right-16 flex flex-col items-center z-50 bg-[#313338]/80 md:bg-transparent rounded-full p-1 backdrop-blur-sm">
           <div 
             onClick={onClose}
             className="group flex flex-col items-center cursor-pointer"
           >
-            <div className="w-9 h-9 rounded-full border-2 border-[#b5bac1] group-hover:border-white flex items-center justify-center text-[#b5bac1] group-hover:text-white transition-all bg-transparent group-hover:bg-[#35373c]">
-              <X className="w-5 h-5" />
+            <div className="w-8 h-8 md:w-9 md:h-9 rounded-full border-2 border-[#b5bac1] group-hover:border-white flex items-center justify-center text-[#b5bac1] group-hover:text-white transition-all bg-transparent group-hover:bg-[#35373c]">
+              <X className="w-4 h-4 md:w-5 md:h-5" />
             </div>
-            <span className="text-[#b5bac1] group-hover:text-white text-xs font-bold mt-1.5 uppercase transition-colors">ESC</span>
+            <span className="hidden md:block text-[#b5bac1] group-hover:text-white text-xs font-bold mt-1.5 uppercase transition-colors">ESC</span>
           </div>
         </div>
         {/* Floating Action Bar */}
