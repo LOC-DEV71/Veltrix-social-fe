@@ -435,7 +435,7 @@ export default function AppLayout() {
   ] : [];
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#313338] text-[#dbdee1] font-sans antialiased select-none">
+    <div className="fixed inset-0 flex overflow-hidden bg-[#313338] text-[#dbdee1] font-sans antialiased select-none">
       
       {/* 📱 Mobile Backdrop */}
       {isMobileSidebarOpen && (
@@ -1074,7 +1074,7 @@ export default function AppLayout() {
         </div>
 
         {/* Content Outlet */}
-        <div className="flex-grow overflow-hidden">
+        <div className="flex-grow overflow-hidden flex flex-col min-h-0 relative">
           <Outlet context={{ 
             selectedCommunity, 
             communityMembers, 
@@ -1767,3 +1767,4 @@ export default function AppLayout() {
     </div>
   );
 }
+
