@@ -187,9 +187,9 @@ export default function VoiceChannelPage() {
 
         if (!isMounted) return;
 
-        console.log('Voice socket connecting...');
+        console.log('Voice socket state:', socket.connected ? 'already connected' : 'connecting...');
 
-        socket.on('connect', () => {
+        const handleConnect = () => {
           if (!isMounted) return;
           console.log('Voice socket connected');
           setConnectionStatus('connected');
@@ -213,7 +213,14 @@ export default function VoiceChannelPage() {
             channelId, 
             state: { isMuted, isDeafened, isVideoOn } 
           });
-        });
+        };
+
+        socket.on('connect', handleConnect);
+        
+        // ⚡ Nếu socket đã connect trước khi handler được đăng ký → gọi thủ công
+        if (socket.connected) {
+          handleConnect();
+        }
         
         socket.on('connect_error', (err) => {
           if (!isMounted) return;
